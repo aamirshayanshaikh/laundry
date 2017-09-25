@@ -58,6 +58,8 @@ $route['site/(:any)'] = "site/$1";
 	$route['purchase_orders/(:any)'] = "inventory/purchase_orders/$1";
 	$route['receive_orders'] = "inventory/receive_orders";
 	$route['receive_orders/(:any)'] = "inventory/receive_orders/$1";
+	$route['customers'] = "customers/customers";
+	$route['customers/(:any)'] = "customers/customers/$1";
 	
 
 

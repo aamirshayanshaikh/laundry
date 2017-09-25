@@ -20,6 +20,7 @@ $nav['dashboard'] = array('title'=>'<i class="fa fa-dashboard"></i> <span> Dashb
 		$inventory['locs'] = array('title'=>'Locations','path'=>'locations','exclude'=>0);
 		$inventory['uom'] = array('title'=>'Unit Of Measures','path'=>'uom','exclude'=>0);
 $nav['inventory'] = array('title'=>'<i class="fa fa-cube"></i> Inventory','path'=>$inventory,'exclude'=>0);
+$nav['customers'] = array('title'=>'<i class="fa fa-users"></i> Customers','path'=>'customers','exclude'=>0);
 $config['sideNav'] = $nav;
 //////////////////////////////////////////////////
 /// RIGHT SIDE BAR LINKS ///

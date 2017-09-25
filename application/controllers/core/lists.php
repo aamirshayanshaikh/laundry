@@ -63,7 +63,62 @@ class Lists extends CI_Controller {
         $this->html->eForm();
         $data['code'] = $this->html->code();
         $this->load->view('load',$data);   
-	}	
+	}
+    public function customers($tbl=null){
+        $total_rows = 30;
+        $pagi = null;
+        if($this->input->post('pagi'))
+            $pagi = $this->input->post('pagi');
+        $post = array();
+        $join = array();
+        $args = array();
+        if(count($this->input->post()) > 0){
+            $post = $this->input->post();
+        }
+        if($this->input->post('name')){
+            $lk  =$this->input->post('name');
+            $args["(customers.name '%".$lk."%')"] = array('use'=>'where','val'=>"",'third'=>false);
+        }
+        $order = array();
+        $cols = array('ID','Name','Contact Person','Contact No.','Email','Reg Date','Inactive','');
+        $count = $this->site_model->get_tbl('customers',$args,$order,$join,true,'customers.*',null,null,true);
+        $page = paginate('lists/customers',$count,$total_rows,$pagi);
+        $items = $this->site_model->get_tbl('customers',$args,$order,$join,true,'customers.*',null,$page['limit']);
+        $json = array();
+        if(count($items) > 0){
+            $ids = array();
+            foreach ($items as $res) {
+                $link = $this->html->A(fa('fa-edit fa-lg'),base_url().'customers/form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+                $json[$res->id] = array(
+                    "id"=>$res->id,   
+                    "title"=>ucwords(strtolower($res->name)),   
+                    "desc"=>ucwords(strtolower($res->contact_person)),   
+                    "subtitle"=>$res->contact_no,   
+                    "email"=>$res->email,   
+                    "reg_date"=>sql2Date($res->reg_date),
+                    "inactive"=>($res->inactive == 0 ? 'No' : 'Yes'),
+                    "link"=>$link
+                );
+                $ids[] = $res->id;
+            }
+            $images = $this->site_model->get_image(null,null,'customers',array('images.img_ref_id'=>$ids)); 
+            foreach ($images as $res) {
+                if(isset($json[$res->img_ref_id])){
+                    $js = $json[$res->img_ref_id];
+                    $js['grid-image'] = $res->img_path;
+                    $json[$res->img_ref_id] = $js;
+                }
+            }
+        }
+        echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
+    }
+    public function customers_filter(){
+        $this->html->sForm();
+            $this->html->inputPaper('Name:','name','');
+        $this->html->eForm();
+        $data['code'] = $this->html->code();
+        $this->load->view('load',$data);   
+    }	
     public function roles($tbl=null){
         $total_rows = 30;
         $pagi = null;

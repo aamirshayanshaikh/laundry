@@ -1473,6 +1473,23 @@ class Html{
 				$str .= $this->selectPaper($label,$nameID,$opts,$value,$placeholder,$selectParams);
 			if($this->returnitize($params)) return $str; else $this->code .= $str;
 	    }
+	    function itemCategoryDropPaper($label=null,$nameID=null,$value=null,$placeholder=null,$params=array(),$searcher=true){
+	    	$CI =& get_instance();
+	 		$CI->load->model('site/site_model');
+	    	$str = "";
+				$selectParams = $params;
+				if(!isset($selectParams['return']))
+					$selectParams['return'] = true;
+
+				$results=$CI->site_model->get_custom_val('item_categories',array('id,name'),null,null,true);
+				$opts  = array();
+				$opts['Select Item Category']  = "";
+				foreach ($results as $res) {
+					$opts[ucFix($res->name)] = $res->id;
+				}
+				$str .= $this->selectPaper($label,$nameID,$opts,$value,$placeholder,$selectParams);
+			if($this->returnitize($params)) return $str; else $this->code .= $str;
+	    }
 	    function taxTypeDropPaper($label=null,$nameID=null,$value=null,$placeholder=null,$params=array(),$searcher=true){
 	    	$CI =& get_instance();
 	 		$CI->load->model('site/site_model');

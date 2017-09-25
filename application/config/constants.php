@@ -8,6 +8,7 @@
 define('MATERIAL_CODE'		, 1);
 define('SUPPLIER_CODE'		, 2);
 define('CUSTOMER_CODE'		, 3);
+define('ITEMS_CODE'			, 4);
 define('VOID' 				, 99);
 define('PURCHASE_ORDER_CODE', 110);
 define('RECEIVE_ORDER_CODE', 111);

@@ -345,6 +345,80 @@ class Lists extends CI_Controller {
         }
         echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
     }
+    public function item_categories(){
+        $total_rows = 30;
+        $pagi = null;
+        if($this->input->post('pagi'))
+            $pagi = $this->input->post('pagi');
+       
+        $post = array();
+        $args = array();
+        $join = array();
+        $order = array();
+        
+        $page_link = 'lists/item_categories';
+        $cols = array('ID','Name','UOM',' ');
+        $table = 'item_categories';
+        $select = 'item_categories.*';
+
+        $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
+        $page = paginate($page_link,$count,$total_rows,$pagi);
+        $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
+
+        $json = array();
+        if(count($items) > 0){
+            $ids = array();
+            foreach ($items as $res) {
+                $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'items/categories_form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+                $json[$res->id] = array(
+                    "id"=>$res->id,   
+                    "name"=>ucFix($res->name),   
+                    "uom"=>strtoupper($res->uom),   
+                    "link"=>$link
+                );
+            }
+        }
+        echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
+    }
+    public function items(){
+        $total_rows = 30;
+        $pagi = null;
+        if($this->input->post('pagi'))
+            $pagi = $this->input->post('pagi');
+       
+        $post = array();
+        $args = array();
+        $join = array();
+        $order = array();
+        
+        $page_link = 'lists/items';
+        $cols = array('ID','Code','Name','Category','UOM','Reg. Date',' ');
+        $table = 'items';
+        $select = 'items.*,item_categories.name as cat_name';
+        $join['item_categories'] = "items.cat_id = item_categories.id";
+
+        $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
+        $page = paginate($page_link,$count,$total_rows,$pagi);
+        $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
+
+        $json = array();
+        if(count($items) > 0){
+            $ids = array();
+            foreach ($items as $res) {
+                $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'items/form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+                $json[$res->id] = array(
+                    "id"=>$res->id,   
+                    "code"=>strtoupper($res->code),   
+                    "name"=>ucFix($res->name),   
+                    "cat_name"=>ucFix($res->cat_name),   
+                    "uom"=>strtoupper($res->uom),   
+                    "reg_date"=>sql2Date($res->reg_date),                  
+                    "link"=>$link
+                );
+            }
+        }
+        echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
+    }
     public function purchase_orders(){
         $total_rows = 30;
         $pagi = null;
@@ -849,105 +923,105 @@ class Lists extends CI_Controller {
         }
         echo json_encode(array('rows'=>$json,'page'=>$page['code'],'post'=>$post));
     }    
-    public function item_categories($id=null){
-        $total_rows = 30;
-        $pagi = null;
-        if($this->input->post('pagi'))
-            $pagi = $this->input->post('pagi');
+    // public function item_categories($id=null){
+    //     $total_rows = 30;
+    //     $pagi = null;
+    //     if($this->input->post('pagi'))
+    //         $pagi = $this->input->post('pagi');
        
-        $post = array();
-        $args = array();
-        $join = array();
-        $order = array();
+    //     $post = array();
+    //     $args = array();
+    //     $join = array();
+    //     $order = array();
         
-        $page_link = 'lists/item_categories';
-        $cols = array('ID','Name','UOM','Type',' ');
-        $table = 'item_categories';
-        $select = 'item_categories.*';
+    //     $page_link = 'lists/item_categories';
+    //     $cols = array('ID','Name','UOM','Type',' ');
+    //     $table = 'item_categories';
+    //     $select = 'item_categories.*';
 
-        $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
-        $page = paginate($page_link,$count,$total_rows,$pagi);
-        $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
+    //     $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
+    //     $page = paginate($page_link,$count,$total_rows,$pagi);
+    //     $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
 
-        $json = array();
-        if(count($items) > 0){
-            $ids = array();
-            foreach ($items as $res) {
-                $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'items/categories_form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
-                $json[$res->id] = array(
-                    "id"=>$res->id,   
-                    "title"=>ucFix($res->name),   
-                    "uom"=>$res->uom,   
-                    "name"=>ucFix($res->type),   
-                    "link"=>$link
-                );
-            }
-        }
-        echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
-    }
-    public function items($tbl=null){
-        $total_rows = 30;
-        $pagi = null;
-        if($this->input->post('pagi'))
-            $pagi = $this->input->post('pagi');
+    //     $json = array();
+    //     if(count($items) > 0){
+    //         $ids = array();
+    //         foreach ($items as $res) {
+    //             $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'items/categories_form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+    //             $json[$res->id] = array(
+    //                 "id"=>$res->id,   
+    //                 "title"=>ucFix($res->name),   
+    //                 "uom"=>$res->uom,   
+    //                 "name"=>ucFix($res->type),   
+    //                 "link"=>$link
+    //             );
+    //         }
+    //     }
+    //     echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
+    // }
+    // public function items($tbl=null){
+    //     $total_rows = 30;
+    //     $pagi = null;
+    //     if($this->input->post('pagi'))
+    //         $pagi = $this->input->post('pagi');
        
-        $post = array();
-        $args = array();
-        $join = array();
-        $order = array();
+    //     $post = array();
+    //     $args = array();
+    //     $join = array();
+    //     $order = array();
         
-        $page_link = 'lists/items';
-        $cols = array('ID','Name','Category','UOM','Type','Price',' ');
-        $table = 'items';
-        $select = 'items.*,item_categories.name as cat_name';
-        $join['item_categories'] = "items.cat_id = item_categories.id";
+    //     $page_link = 'lists/items';
+    //     $cols = array('ID','Name','Category','UOM','Type','Price',' ');
+    //     $table = 'items';
+    //     $select = 'items.*,item_categories.name as cat_name';
+    //     $join['item_categories'] = "items.cat_id = item_categories.id";
 
-        if(count($this->input->post()) > 0){
-            $post = $this->input->post();
-        }
-        if($this->input->post('code')){
-            $lk  =$this->input->post('code');
-            $args["(items.code like '%".$lk."%')"] = array('use'=>'where','val'=>"",'third'=>false);
-        }
-        if($this->input->post('name')){
-            $lk  =$this->input->post('name');
-            $args["(items.name like '%".$lk."%')"] = array('use'=>'where','val'=>"",'third'=>false);
-        }
-        if($this->input->post('cat_id')){
-            $args['items.cat_id'] = array('use'=>'where','val'=>$this->input->post('cat_id'));
-        }
+    //     if(count($this->input->post()) > 0){
+    //         $post = $this->input->post();
+    //     }
+    //     if($this->input->post('code')){
+    //         $lk  =$this->input->post('code');
+    //         $args["(items.code like '%".$lk."%')"] = array('use'=>'where','val'=>"",'third'=>false);
+    //     }
+    //     if($this->input->post('name')){
+    //         $lk  =$this->input->post('name');
+    //         $args["(items.name like '%".$lk."%')"] = array('use'=>'where','val'=>"",'third'=>false);
+    //     }
+    //     if($this->input->post('cat_id')){
+    //         $args['items.cat_id'] = array('use'=>'where','val'=>$this->input->post('cat_id'));
+    //     }
 
-        $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
-        $page = paginate($page_link,$count,$total_rows,$pagi);
-        $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
+    //     $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
+    //     $page = paginate($page_link,$count,$total_rows,$pagi);
+    //     $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
 
-        $json = array();
-        if(count($items) > 0){
-            $ids = array();
-            foreach ($items as $res) {
-                $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'items/form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
-                $json[$res->id] = array(
-                    "id"=>$res->id,   
-                    "title"=>"[".$res->code."] ".ucFix($res->name),   
-                    "desc"=>ucFix($res->cat_name),   
-                    "uom"=>$res->uom,   
-                    "name"=>ucFix($res->type),   
-                    "subtitle"=>num($res->price),   
-                    "link"=>$link
-                );
-            }
-        }
-        echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
-    }
-    public function items_filter(){
-        $this->html->sForm();
-            $this->html->inputPaper('Code:','code','');
-            $this->html->inputPaper('Name:','name','');
-            $this->html->itemCategoriesDropPaper('Category:','cat_id','');
-        $this->html->eForm();
-        $data['code'] = $this->html->code();
-        $this->load->view('load',$data);   
-    }
+    //     $json = array();
+    //     if(count($items) > 0){
+    //         $ids = array();
+    //         foreach ($items as $res) {
+    //             $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'items/form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+    //             $json[$res->id] = array(
+    //                 "id"=>$res->id,   
+    //                 "title"=>"[".$res->code."] ".ucFix($res->name),   
+    //                 "desc"=>ucFix($res->cat_name),   
+    //                 "uom"=>$res->uom,   
+    //                 "name"=>ucFix($res->type),   
+    //                 "subtitle"=>num($res->price),   
+    //                 "link"=>$link
+    //             );
+    //         }
+    //     }
+    //     echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
+    // }
+    // public function items_filter(){
+    //     $this->html->sForm();
+    //         $this->html->inputPaper('Code:','code','');
+    //         $this->html->inputPaper('Name:','name','');
+    //         $this->html->itemCategoriesDropPaper('Category:','cat_id','');
+    //     $this->html->eForm();
+    //     $data['code'] = $this->html->code();
+    //     $this->load->view('load',$data);   
+    // }
     public function enrolls($tbl=null){
         $total_rows = 30;
         $pagi = null;

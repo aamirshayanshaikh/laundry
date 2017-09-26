@@ -22,7 +22,7 @@ function stages_form($det=array()){
 	$CI->html->eDivRow();
 	return $CI->html->code();
 }
-function types_form($det=array(),$stages=array()){
+function types_form($det=array(),$stages=array(),$items=array()){
 	$CI =& get_instance();
 	$CI->html->sDivRow();
 		$CI->html->sDivCol(8,'left',2);
@@ -39,6 +39,7 @@ function types_form($det=array(),$stages=array()){
 							$tabs = array( 
 										  fa('fa-info-circle').' General Details'=>array('href'=>'#general-pane'),
 										  fa('fa-cubes').' Materials'=>array('href'=>'#mats-pane'),
+										  fa('fa-sticky-note-o').' Items'=>array('href'=>'#items-pane'),
 										  fa('fa-refresh').' Stages'=>array('href'=>'#stages-pane'),
 										 );
 							$CI->html->tabHead($tabs,null,array());
@@ -119,6 +120,35 @@ function types_form($det=array(),$stages=array()){
 									$CI->html->eDivRow();
 								$CI->html->eTabPane();
 								# STAGES END
+								# ITEMS START
+								$CI->html->sTabPane(array('id'=>'items-pane','class'=>'tab-pane'));
+									$CI->html->sDivRow(array('style'=>'margin-bottom:20px;'));
+										$CI->html->sDivCol();
+											$CI->html->sDivRow();
+												$CI->html->sDivCol(8);
+													$CI->html->woItemsDropPaper(null,'item_id',iSetObj($det,'item_id'),null,array());
+												$CI->html->eDivCol();
+												$CI->html->sDivCol(2);
+													$CI->html->button('Add',array('id'=>'add-item','class'=>'btn-flat btn-block btn-sm'),'info');
+												$CI->html->eDivCol();
+											$CI->html->eDivRow();
+										$CI->html->eDivCol();
+									$CI->html->eDivRow();
+									$CI->html->sDivRow();
+										$CI->html->sDivCol(6);
+											$CI->html->sUl(array('id'=>'item-list','class'=>'draggable'));
+												foreach ($items as $line => $row) {
+													$CI->html->sLi(array('id'=>'item-'.$row['item_id'],'ref'=>$row['item_id']));
+														$CI->html->span("",array('class'=>'fa fa-bars icon-move'));
+														$CI->html->span($row['item_name']);
+														$CI->html-> A(fa('fa-times fa-lg'),'#',array('class'=>'pull-right','style'=>'margin-top:1px;'));													
+													$CI->html->eLi();
+												}
+											$CI->html->eUl();
+										$CI->html->eDivCol();
+									$CI->html->eDivRow();
+								$CI->html->eTabPane();
+								# ITEMS END
 							$CI->html->eTabBody();
 					$CI->html->eForm();
 				$CI->html->eBoxBody();

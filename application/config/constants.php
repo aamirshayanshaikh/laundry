@@ -14,6 +14,8 @@ define('PURCHASE_ORDER_CODE', 110);
 define('RECEIVE_ORDER_CODE', 111);
 define('WORK_ORDER_ISSUE_CODE', 120);
 define('WORK_ORDER_RECEIVE_CODE', 121);
+define('WORK_ORDER_BATCH_CODE', 122);
+define('WORK_ORDER_LOT_CODE', 123);
 /*
 |--------------------------------------------------------------------------
 | USER ROLES

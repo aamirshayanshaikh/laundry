@@ -90,6 +90,7 @@ class Work_order extends CI_Controller {
 		$img = array();
 		$materials = array();
 		$stages = array();
+		$items = array();
 		if($id != null){
 			$details = $this->site_model->get_tbl('work_order_types',array('id'=>$id));
 			if($details){
@@ -115,13 +116,23 @@ class Work_order extends CI_Controller {
 									  'stage_name' =>  $res->stage_name,	
 									 );	
 				}
+				$join = array();
+				$join['items'] = "work_order_type_items.item_id = items.id";
+				$select = "work_order_type_items.*,items.name as item_name";
+				$result_details = $this->site_model->get_tbl('work_order_type_items',array('type_id'=>$id),array(),$join,true,$select);
+				foreach ($result_details as $res) {
+					$items[] = array(
+									  'item_id' => $res->item_id,	
+									  'item_name' =>  $res->item_name,	
+									 );	
+				}
 
 			}
 		}
 		sess_initialize('type-mats',$materials);
 		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
 		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'work_order/types"','text'=>"<i class='fa fa-fw fa-reply'></i>");
-		$data['code'] = types_form($det,$stages);
+		$data['code'] = types_form($det,$stages,$items);
 		$data['load_js'] = 'work_order/work_order';
 		$data['use_js'] = 'types_form';
 		$this->load->view('page',$data);
@@ -138,6 +149,16 @@ class Work_order extends CI_Controller {
 		$msg = "";
 
 		$stages = json_decode($_POST['stages']);
+		$woitems = json_decode($_POST['items']);
+
+		if(count($stages) == 0){
+			echo json_encode(array('error'=>1,'msg'=>'Please add stages.',"id"=>''));
+			return false;
+		}
+		if(count($woitems) == 0){
+			echo json_encode(array('error'=>1,'msg'=>'Please add items.',"id"=>''));
+			return false;
+		}
 
 		if(!$this->input->post('id')){
 			$id = $this->site_model->add_tbl('work_order_types',$items);
@@ -171,6 +192,15 @@ class Work_order extends CI_Controller {
 				);
 			}
 			$this->site_model->add_tbl_batch('work_order_type_stages',$stgrows);
+			$this->site_model->delete_tbl('work_order_type_items',array('type_id'=>$id));
+			$itrows = array();
+			foreach ($woitems as $line => $item_id) {
+				$itrows[] = array(
+					'type_id'	=>	$id,
+					'item_id'	=>	$item_id,
+				);
+			}
+			$this->site_model->add_tbl_batch('work_order_type_items',$itrows);
 		}
 		if(!$this->input->post('rForm')){
 			if($error == 0){

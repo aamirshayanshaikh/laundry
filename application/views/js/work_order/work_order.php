@@ -7,9 +7,13 @@ $(document).ready(function(){
             $('#stage-list li').each(function(){
                 stages.push($(this).attr('ref'));
             });
+            var items = [];
+            $('#item-list li').each(function(){
+                items.push($(this).attr('ref'));
+            });
 			var noError = $('#general-form').rOkay({
                 btn_load        :   btn,
-    			addData		    : 	"stages="+JSON.stringify(stages),
+    			addData		    : 	"stages="+JSON.stringify(stages)+"&items="+JSON.stringify(items),
 				bnt_load_remove	: 	true,
 				asJson			: 	true,
 				onComplete		: 	function(data){
@@ -85,7 +89,6 @@ $(document).ready(function(){
     	});
         $("#stage-list").sortable({handle: '.icon-move'});
         $('#stage-list li a').each(function(){
-            console.log($(this));
             $(this).click(function(){
                 $(this).parent().remove();
                 $("#stage-list").sortable("refresh");
@@ -118,6 +121,39 @@ $(document).ready(function(){
                     return false;
                 });
                 $('#stage_id').val('').trigger('change');
+            }
+            return false;
+        });
+        $('#item-list li a').each(function(){
+            $(this).click(function(){
+                $(this).parent().remove();
+                return false;
+            });
+        });
+        $('#add-item').click(function(){
+            var item_id   = $('#item_id').val();
+            if(item_id == ""){
+                return false;
+            }
+            var item_name = $('#item_id').find("option:selected").text();
+            var add = true;
+            $('#item-list li').each(function(){
+                if($(this).attr('id') == 'item-'+item_id){
+                    add = false;
+                    $.alertMsg({msg:item_name+' is already in the list',type:'error'});
+                    return false;
+                }
+            });
+            if(add){
+                var li = $('<li id="item-'+item_id+'" ref="'+item_id+'"><span class="fa fa-bars icon-move"></span><span>'+item_name+'</span></li>');
+                var remove = $('<a href="#" class="pull-right" style="margin-top:1px;"><i class="fa fa-times fa-lg"></i></a>');
+                li.append(remove);
+                $("#item-list").append(li);
+                remove.click(function(){
+                    $(this).parent().remove();
+                    return false;
+                });
+                $('#item_id').val('').trigger('change');
             }
             return false;
         });

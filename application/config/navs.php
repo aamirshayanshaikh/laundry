@@ -21,9 +21,13 @@ $nav['customers'] = array('title'=>'<i class="fa fa-users"></i> Customers','path
 		$inventory['locs'] = array('title'=>'Locations','path'=>'locations','exclude'=>0);
 		$inventory['uom'] = array('title'=>'Unit Of Measures','path'=>'uom','exclude'=>0);
 $nav['inventory'] = array('title'=>'<i class="fa fa-cube"></i> Inventory','path'=>$inventory,'exclude'=>0);
+	$work_order['wo-transactions'] = array('title'=>'Transactions','path'=>null,'exclude'=>0);	
+		$work_order['wo_rcv'] = array('title'=>'Receive Items','path'=>'work_order/receive','exclude'=>0);
+		$work_order['wo_issue'] = array('title'=>'Create','path'=>'work_order/create','exclude'=>0);
+		$work_order['wo_update'] = array('title'=>'Update','path'=>'work_order/update','exclude'=>0);
 	$work_order['wo-maintenance'] = array('title'=>'Maintenance','path'=>null,'exclude'=>0);	
-		$work_order['wo_cats'] = array('title'=>'Types','path'=>'work_orders','exclude'=>0);
-		$work_order['wo_stages'] = array('title'=>'Stages','path'=>'work_orders','exclude'=>0);
+		$work_order['wo_types'] = array('title'=>'Types','path'=>'work_order/types','exclude'=>0);
+		$work_order['wo_stages'] = array('title'=>'Stages','path'=>'work_order/stages','exclude'=>0);
 		$work_order['wo_items'] = array('title'=>'Items','path'=>'items','exclude'=>0);
 		$work_order['wo_items_cat'] = array('title'=>'Item Categories','path'=>'items/categories','exclude'=>0);
 $nav['work_order'] = array('title'=>'<i class="fa fa-ticket"></i> Work Order','path'=>$work_order,'exclude'=>0);

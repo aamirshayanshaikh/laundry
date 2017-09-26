@@ -3,8 +3,13 @@ $(document).ready(function(){
 	<?php if($use_js == 'types_form'): ?>
 		$('#save-btn').click(function(){
 			var btn = $(this);
+            var stages = [];
+            $('#stage-list li').each(function(){
+                stages.push($(this).attr('ref'));
+            });
 			var noError = $('#general-form').rOkay({
-    			btn_load		: 	btn,
+                btn_load        :   btn,
+    			addData		    : 	"stages="+JSON.stringify(stages),
 				bnt_load_remove	: 	true,
 				asJson			: 	true,
 				onComplete		: 	function(data){
@@ -78,6 +83,44 @@ $(document).ready(function(){
     							$('#mat_id').val('').trigger('change');
     						}
     	});
+        $("#stage-list").sortable({handle: '.icon-move'});
+        $('#stage-list li a').each(function(){
+            console.log($(this));
+            $(this).click(function(){
+                $(this).parent().remove();
+                $("#stage-list").sortable("refresh");
+                return false;
+            });
+        });
+        $('#add-stage').click(function(){
+            var stage_id   = $('#stage_id').val();
+            if(stage_id == ""){
+                return false;
+            }
+            var stage_name = $('#stage_id').find("option:selected").text();
+            var add = true;
+            $('#stage-list li').each(function(){
+                if($(this).attr('id') == 'stage-'+stage_id){
+                    add = false;
+                    $.alertMsg({msg:stage_name+' is already in the list',type:'error'});
+                    return false;
+                }
+            });
+            if(add){
+                var li = $('<li id="stage-'+stage_id+'" ref="'+stage_id+'"><span class="fa fa-bars icon-move"></span><span>'+stage_name+'</span></li>');
+                var remove = $('<a href="#" class="pull-right" style="margin-top:1px;"><i class="fa fa-times fa-lg"></i></a>');
+                li.append(remove);
+                $("#stage-list").append(li);
+                $("#stage-list").sortable("refresh");
+                remove.click(function(){
+                    $(this).parent().remove();
+                    $("#stage-list").sortable("refresh");
+                    return false;
+                });
+                $('#stage_id').val('').trigger('change');
+            }
+            return false;
+        });
 	<?php elseif($use_js == 'stages_form'): ?>
 		$('#save-btn').click(function(){
 			var btn = $(this);

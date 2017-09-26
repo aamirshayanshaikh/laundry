@@ -22,7 +22,7 @@ function stages_form($det=array()){
 	$CI->html->eDivRow();
 	return $CI->html->code();
 }
-function types_form($det=array()){
+function types_form($det=array(),$stages=array()){
 	$CI =& get_instance();
 	$CI->html->sDivRow();
 		$CI->html->sDivCol(8,'left',2);
@@ -31,7 +31,7 @@ function types_form($det=array()){
 					$CI->html->sForm("work_order/types_db","general-form");
 						$CI->html->hidden('id',iSetObj($det,'id'));
 						$CI->html->sDivRow();
-							$CI->html->sDivCol(8);
+							$CI->html->sDivCol(10);
 								$CI->html->inputPaper(null,'name',iSetObj($det,'name'),'Name',array('class'=>'rOkay input-lg'));
 							$CI->html->eDivCol();
 						$CI->html->eDivRow();
@@ -92,6 +92,31 @@ function types_form($det=array()){
 								# ITEMS END
 								# STAGES START
 								$CI->html->sTabPane(array('id'=>'stages-pane','class'=>'tab-pane'));
+									$CI->html->sDivRow(array('style'=>'margin-bottom:20px;'));
+										$CI->html->sDivCol();
+											$CI->html->sDivRow();
+												$CI->html->sDivCol(8);
+													$CI->html->workOrderStagesDropPaper(null,'stage_id',iSetObj($det,'stage_id'),null,array());
+												$CI->html->eDivCol();
+												$CI->html->sDivCol(2);
+													$CI->html->button('Add',array('id'=>'add-stage','class'=>'btn-flat btn-block btn-sm'),'info');
+												$CI->html->eDivCol();
+											$CI->html->eDivRow();
+										$CI->html->eDivCol();
+									$CI->html->eDivRow();
+									$CI->html->sDivRow();
+										$CI->html->sDivCol(6);
+											$CI->html->sUl(array('id'=>'stage-list','class'=>'draggable'));
+												foreach ($stages as $line => $row) {
+													$CI->html->sLi(array('id'=>'stage-'.$row['stage_id'],'ref'=>$row['stage_id']));
+														$CI->html->span("",array('class'=>'fa fa-bars icon-move'));
+														$CI->html->span($row['stage_name']);
+														$CI->html-> A(fa('fa-times fa-lg'),'#',array('class'=>'pull-right','style'=>'margin-top:1px;'));													
+													$CI->html->eLi();
+												}
+											$CI->html->eUl();
+										$CI->html->eDivCol();
+									$CI->html->eDivRow();
 								$CI->html->eTabPane();
 								# STAGES END
 							$CI->html->eTabBody();

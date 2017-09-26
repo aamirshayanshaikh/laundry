@@ -66,6 +66,7 @@ class Work_order extends CI_Controller {
 		$det = array();
 		$img = array();
 		$materials = array();
+		$stages = array();
 		if($id != null){
 			$details = $this->site_model->get_tbl('work_order_types',array('id'=>$id));
 			if($details){
@@ -81,12 +82,23 @@ class Work_order extends CI_Controller {
 					'mat_id' => $res->mat_id,	
 					'mat_name' => $res->mat_name);	
 				}
+				$join = array();
+				$join['work_order_stages'] = "work_order_type_stages.stage_id = work_order_stages.id";
+				$select = "work_order_type_stages.*,work_order_stages.name as stage_name";
+				$result_details = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$id),array(),$join,true,$select);
+				foreach ($result_details as $res) {
+					$stages[] = array(
+									  'stage_id' => $res->stage_id,	
+									  'stage_name' =>  $res->stage_name,	
+									 );	
+				}
+
 			}
 		}
 		sess_initialize('type-mats',$materials);
 		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
 		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'work_order/types"','text'=>"<i class='fa fa-fw fa-reply'></i>");
-		$data['code'] = types_form($det);
+		$data['code'] = types_form($det,$stages);
 		$data['load_js'] = 'work_order/work_order';
 		$data['use_js'] = 'types_form';
 		$this->load->view('page',$data);
@@ -101,6 +113,9 @@ class Work_order extends CI_Controller {
 		);
 		$error = 0;
 		$msg = "";
+
+		$stages = json_decode($_POST['stages']);
+
 		if(!$this->input->post('id')){
 			$id = $this->site_model->add_tbl('work_order_types',$items);
 			$msg = "Added New Type ".$items['name'];
@@ -123,6 +138,16 @@ class Work_order extends CI_Controller {
 				);
 			}
 			$this->site_model->add_tbl_batch('work_order_type_materials',$rows);
+			$this->site_model->delete_tbl('work_order_type_stages',array('type_id'=>$id));
+			$stgrows = array();
+			foreach ($stages as $line => $stage_id) {
+				$stgrows[] = array(
+					'type_id'	=>	$id,
+					'order'		=>	$line,
+					'stage_id'	=>	$stage_id,
+				);
+			}
+			$this->site_model->add_tbl_batch('work_order_type_stages',$stgrows);
 		}
 		if(!$this->input->post('rForm')){
 			if($error == 0){

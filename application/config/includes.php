@@ -31,6 +31,7 @@ $jsFiles[] = "plugins/daterangepicker/daterangepicker.js";
 $jsFiles[] = "plugins/datepicker/bootstrap-datepicker.js";
 $jsFiles[] = "plugins/bootstrap-select/js/bootstrap-select.min.js";
 $jsFiles[] = "plugins/jquery.number.js";
+$jsFiles[] = "plugins/sortable.js";
 
 $jsFiles[] = "dist/js/app.min.js";
 $jsFiles[] = "dist/js/initial.js";

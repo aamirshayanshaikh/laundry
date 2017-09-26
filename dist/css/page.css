@@ -447,3 +447,35 @@ div.fixed-tbl-div {
   border: 0;
   border-bottom: 1px solid #ddd !important;
 }
+
+body.dragging, body.dragging * {
+  cursor: move !important;
+}
+.dragged {
+  position: absolute;
+  opacity: 0.5;
+  z-index: 2000;
+}
+ul.draggable li.placeholder {
+  position: relative;
+  /** More li styles **/
+}
+ul.draggable li.placeholder:before {
+  position: absolute;
+  /** Define arrowhead **/
+}
+ul.draggable {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+ul.draggable li{
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-bottom:5px;
+  border: 1px solid #ddd;
+}
+ul.draggable li .icon-move{
+  display: inline-block;
+  margin-right: 5px;
+}

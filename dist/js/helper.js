@@ -552,7 +552,8 @@
     var opt = $.extend({
       cart      :     this.attr('id'),
       columns   :     [],
-      afterAdd  :     function(response){},
+      beforeAdd :     function(){return true;},
+      afterAdd  :     function(response){return true;},
     },options);
     var cart_name = opt.cart;
     var inputRow = $('#'+cart_name+' .input-row');
@@ -574,10 +575,13 @@
       return false;
     });
     addBtn.click(function(){
-      var formData = inputRow.serializeAnything();
-      $.post(baseUrl+'cart/add/'+cart_name,formData,function(data){
-        addEditRow(cart_name,inputCols,data.id,data.row);
-      },'json');
+      var goAdd = opt.beforeAdd.call(this);
+      if(goAdd){
+        var formData = inputRow.serializeAnything();
+        $.post(baseUrl+'cart/add/'+cart_name,formData,function(data){
+          addEditRow(cart_name,inputCols,data.id,data.row);
+        },'json');
+      }
       return false;
     });
     cancelBtn.click(function(){

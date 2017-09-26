@@ -19,4 +19,24 @@ class Cart extends CI_Controller {
         $sess = sess($name);
         echo json_encode($sess);
     }
+    public function check_cart($name=null,$col,$val){
+        $sess = sess($name);
+        $error = "";
+        if(count($sess) > 0){
+            foreach ($sess as $lid => $row) {
+                if(isset($row[$col])){
+                    // echo var_dump($row[$col],$val);
+                    if($row[$col] == $val){
+                        // echo "ere";
+                        $error = "Invalid. Already in Cart";
+                        break;
+                    }
+                }
+                else{
+                    $error = "Invalid. Column not found";
+                }
+            }
+        }
+        echo json_encode(array('error'=>$error));
+    }
 }

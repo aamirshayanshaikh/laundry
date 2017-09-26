@@ -65,13 +65,25 @@ class Work_order extends CI_Controller {
 		$data['page_subtitle'] = "Add New Type";
 		$det = array();
 		$img = array();
+		$materials = array();
 		if($id != null){
 			$details = $this->site_model->get_tbl('work_order_types',array('id'=>$id));
 			if($details){
 				$det = $details[0];
 				$data['page_subtitle'] = "Edit Type ".ucwords(strtolower($det->name));
+				$join['materials'] = "work_order_type_materials.mat_id = materials.id";
+				$select = "work_order_type_materials.*,materials.name as mat_name";
+				$result_details = $this->site_model->get_tbl('work_order_type_materials',array('type_id'=>$id),array(),$join,true,$select);
+				foreach ($result_details as $res) {
+					$materials[] = array('cost' => $res->cost,	
+					'cost_total_hid' => numInt($res->cost * $res->order_qty),	
+					'ord_qty' => $res->order_qty,	
+					'mat_id' => $res->mat_id,	
+					'mat_name' => $res->mat_name);	
+				}
 			}
 		}
+		sess_initialize('type-mats',$materials);
 		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
 		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'work_order/types"','text'=>"<i class='fa fa-fw fa-reply'></i>");
 		$data['code'] = types_form($det);
@@ -81,8 +93,10 @@ class Work_order extends CI_Controller {
 	}
 	public function types_db($id=null){
 		$user = sess('user');
+		$materials = sess('type-mats');
 		$items = array(
 		    "name"=>$this->input->post('name'),
+		    "uom"=>$this->input->post('uom'),
 		    "description"=>$this->input->post('description'),
 		);
 		$error = 0;
@@ -95,6 +109,20 @@ class Work_order extends CI_Controller {
 			$id = $this->input->post('id');
 			$this->site_model->update_tbl('work_order_types','id',$items,$id);
 			$msg = "Updated Type ".$items['name'];
+		}
+		if($id){
+			$this->site_model->delete_tbl('work_order_type_materials',array('type_id'=>$id));
+			$rows = array();
+			foreach ($materials as $lid => $row) {
+				$rows[] = array(
+					'type_id'	=>	$id,
+					'mat_id'	=>	$row['mat_id'],
+					'order_qty'	=>	$row['ord_qty'],
+					'cost'		=>	$row['cost'],
+					'total_cost'=>	$row['ord_qty'] * $row['cost'],
+				);
+			}
+			$this->site_model->add_tbl_batch('work_order_type_materials',$rows);
 		}
 		if(!$this->input->post('rForm')){
 			if($error == 0){

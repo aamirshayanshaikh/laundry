@@ -121,24 +121,62 @@ $(document).ready(function(){
             }
             return false;
         });
-	<?php elseif($use_js == 'stages_form'): ?>
-		$('#save-btn').click(function(){
-			var btn = $(this);
-			var noError = $('#general-form').rOkay({
-    			btn_load		: 	btn,
-				bnt_load_remove	: 	true,
-				asJson			: 	true,
-				onComplete		: 	function(data){
-										if(data.error == 0){
-											location.reload();
-										}
-										else{
-											$.alertMsg({msg:data.msg,type:'error'});
-										}
-									},
-    		});
-			return false;
-    	});	
+    <?php elseif($use_js == 'stages_form'): ?>
+    <?php elseif($use_js == 'receive_form'): ?>
+        $('#save-btn').click(function(){
+            var btn = $(this);
+            var noError = $('#general-form').rOkay({
+                btn_load        :   btn,
+                bnt_load_remove :   true,
+                asJson          :   true,
+                onComplete      :   function(data){
+                                        if(data.error == 0){
+                                            location.reload();
+                                        }
+                                        else{
+                                            $.alertMsg({msg:data.msg,type:'error'});
+                                        }
+                                    },
+            });
+            return false;
+        }); 
+        $('#item_id').change(function(){
+            var val = $(this).val();
+            var selected = $(this).find("option:selected");
+            if(val != ""){
+                $('#uom').val(selected.attr('uom'));
+                $('#uom_txt').html(selected.attr('uom'));
+                $('#item_name').val(selected.text());
+            }
+            $('#ord_qty').val('').focus();
+        });
+        $('#rcv-items').rCart({
+            'columns'   :   ['item_name','uom','rcv_qty'],
+            'beforeAdd' :   function(){
+                                var goAdd = true;
+                                if(parseFloat($('#rcv_qty').val()) <= 0){
+                                    goAdd = false;
+                                    $.alertMsg({msg:'Invalid Qty',type:'error'});
+                                }
+                                //  else{
+                                //      $.post(baseUrl+'cart/check_cart/type-mats/mat_id/'+$('#mat_id').val(),function(data){
+                                   //           if(data.error != ""){
+                                            //  $.alertMsg({msg:data.error,type:'error'});
+                                            //  goAdd = false;
+                                            // }
+                                   //      },'json').fail( function(xhr, textStatus, errorThrown) {
+                                   //        console.log(xhr.responseText);
+                                   //      });
+                                //  }
+                                return goAdd;
+                            },
+            'afterAdd'  :   function(){
+                                $('#rcv_qty').val('').focus();
+                                $('#uom_txt').html('');
+                                $('#uom').val('');
+                                $('#item_id').val('').trigger('change');
+                            }
+        });
 	<?php endif; ?>
 });
 </script>

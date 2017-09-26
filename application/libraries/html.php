@@ -1319,6 +1319,23 @@ class Html{
 				$str .= $this->select($label,$nameID,$opts,$value,$selectParams);
 			if($this->returnitize($params)) return $str; else $this->code .= $str;
 	    }
+	    function woItemsDrop($label=null,$nameID=null,$value=null,$placeholder=null,$params=array(),$searcher=true){
+	    	$CI =& get_instance();
+	 		$CI->load->model('site/site_model');
+	    	$str = "";
+				$selectParams = $params;
+				if(!isset($selectParams['return']))
+					$selectParams['return'] = true;
+
+				$results=$CI->site_model->get_custom_val('items',array('id,name','uom'),null,null,true);
+				$opts  = array();
+				$opts['Select Item']  = "";
+				foreach ($results as $res) {
+					$opts[ucFix($res->name)] = array('value'=>$res->id,'uom'=>$res->uom);
+				}
+				$str .= $this->select($label,$nameID,$opts,$value,$selectParams);
+			if($this->returnitize($params)) return $str; else $this->code .= $str;
+	    }
 	    function sectionsDropPaper($label=null,$nameID=null,$value=null,$placeholder=null,$params=array(),$searcher=true){
 	    	$CI =& get_instance();
 	 		$CI->load->model('site/site_model');
@@ -1450,6 +1467,23 @@ class Html{
 				$results=$CI->site_model->get_custom_val('suppliers',array('id,name'),null,null,true);
 				$opts  = array();
 				$opts['Select Supplier']  = "";
+				foreach ($results as $res) {
+					$opts[ucFix($res->name)] = $res->id;
+				}
+				$str .= $this->selectPaper($label,$nameID,$opts,$value,$placeholder,$selectParams);
+			if($this->returnitize($params)) return $str; else $this->code .= $str;
+	    }
+	    function customerDropPaper($label=null,$nameID=null,$value=null,$placeholder=null,$params=array(),$searcher=true){
+	    	$CI =& get_instance();
+	 		$CI->load->model('site/site_model');
+	    	$str = "";
+				$selectParams = $params;
+				if(!isset($selectParams['return']))
+					$selectParams['return'] = true;
+
+				$results=$CI->site_model->get_custom_val('customers',array('id,name'),null,null,true);
+				$opts  = array();
+				$opts['Select Customer']  = "";
 				foreach ($results as $res) {
 					$opts[ucFix($res->name)] = $res->id;
 				}

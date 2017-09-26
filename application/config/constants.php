@@ -12,6 +12,8 @@ define('ITEMS_CODE'			, 4);
 define('VOID' 				, 99);
 define('PURCHASE_ORDER_CODE', 110);
 define('RECEIVE_ORDER_CODE', 111);
+define('WORK_ORDER_ISSUE_CODE', 120);
+define('WORK_ORDER_RECEIVE_CODE', 121);
 /*
 |--------------------------------------------------------------------------
 | USER ROLES

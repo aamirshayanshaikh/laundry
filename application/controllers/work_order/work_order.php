@@ -5,55 +5,78 @@ class Work_order extends CI_Controller {
 		parent::__construct();
 		$this->load->helper('work_order/work_order_helper');
 	}
-	// public function index(){
-	// 	$data = $this->syter->spawn('uom');
-	// 	$data['code'] = listPage(fa('fa-flask')." Unit Of Measures",'uom','uom/form','list','list',false);
-	// 	$this->load->view('list',$data);
-	// }
-	// public function form($id=null){
-	// 	$data = $this->syter->spawn('uom');
-	// 	$data['page_title'] = fa('fa-flask')." Unit Of Measures";
-	// 	$data['page_subtitle'] = "Add New UOM";
-	// 	$det = array();
-	// 	$img = array();
-	// 	if($id != null){
-	// 		$details = $this->site_model->get_tbl('uom',array('id'=>$id));
-	// 		if($details){
-	// 			$det = $details[0];
-	// 			$data['page_subtitle'] = "Edit UOM ".ucwords(strtolower($det->name));
-	// 		}
-	// 	}
-	// 	$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
-	// 	$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'uom"','text'=>"<i class='fa fa-fw fa-reply'></i>");
-	// 	$data['code'] = uom_form($det);
-	// 	$data['load_js'] = 'inventory/uom';
-	// 	$data['use_js'] = 'uom_form';
-	// 	$this->load->view('page',$data);
-	// }
-	// public function db($id=null){
-	// 	$user = sess('user');
-	// 	$items = array(
-	// 	    "name"=>$this->input->post('name'),
-	// 	    "abbrev"=>$this->input->post('abbrev'),
-	// 	);
-	// 	$error = 0;
-	// 	$msg = "";
-	// 	if(!$this->input->post('id')){
-	// 		$id = $this->site_model->add_tbl('uom',$items);
-	// 		$msg = "Added New UOM ".$items['name'];
-	// 	}
-	// 	else{
-	// 		$id = $this->input->post('id');
-	// 		$this->site_model->update_tbl('uom','id',$items,$id);
-	// 		$msg = "Updated UOM ".$items['name'];
-	// 	}
-	// 	if(!$this->input->post('rForm')){
-	// 		if($error == 0){
-	// 			site_alert($msg,'success');
-	// 		}
-	// 	}
-	// 	echo json_encode(array('error'=>$error,'msg'=>$msg,'items'=>$items,'id'=>$id));
-	// }
+	public function receive(){
+		$data = $this->syter->spawn('wo_rcv');
+		$data['page_title'] = fa('fa-inbox')." Receive Items";		
+		$items = array();
+		$new_ref = $this->site_model->get_next_ref(WORK_ORDER_RECEIVE_CODE);
+		$today = $this->site_model->get_db_now('php',true);
+
+		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
+		// $data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'uom"','text'=>"<i class='fa fa-fw fa-reply'></i>");
+		sess_initialize('rcv-items',$items);
+		$data['code'] = receive_form($new_ref,$today);
+		$data['load_js'] = 'work_order/work_order';
+		$data['use_js'] = 'receive_form';
+		$this->load->view('page',$data);
+	}
+	public function receive_db(){
+		$reference = $this->input->post('reference');
+		$user = sess('user');
+		$details = sess('rcv-items');
+		if(count($details) == 0){
+			echo json_encode(array('error'=>1,'msg'=>'Please add items.',"id"=>''));
+			return false;
+		}
+		if(!$this->input->post('id')){
+			$check = $this->site_model->ref_unused(WORK_ORDER_RECEIVE_CODE,$reference);
+			if(!$check){
+				echo json_encode(array('error'=>1,'msg'=>'Reference '.$reference.' is already in use.',"id"=>''));
+				return false;			
+			}
+		}
+
+		$error = 0;
+		$msg = "";
+		$id = 0;
+		$rcv_qty = 0;
+		foreach ($details as $lid => $row) {
+			$rcv_qty += $row['rcv_qty'];
+		}
+		$items = array(
+			"reference" 	=> $reference,
+			"rcv_date" 		=> date2Sql($this->input->post('rcv_date')),
+			"rcv_qty" 		=> $rcv_qty,
+			"customer_id" 	=> $this->input->post('customer_id'),
+			"memo"  		=> $this->input->post('memo'),
+		);
+		if(!$this->input->post('id')){
+			$id = $this->site_model->add_tbl('work_order_receives',$items,array('reg_date'=>'NOW()','reg_user'=>$user['id']));
+			$this->site_model->save_ref(WORK_ORDER_RECEIVE_CODE,$reference);	
+			$msg = "Added new Work Order Receive Items Reference #".$reference;	
+		}
+		else{
+			$id = $this->input->post('id');
+			$this->site_model->update_tbl('work_order_receives','id',$items,$id);
+			$msg = "Updated Work Order Receive Items Reference #".$reference;	
+		}
+		if($id){
+			$this->site_model->delete_tbl('work_order_receive_items',array('rcv_id'=>$id));
+			$rows = array();
+			foreach ($details as $lid => $row) {
+				$rows[] = array(
+					'rcv_id'	=>	$id,
+					'item_id'	=>	$row['item_id'],
+					'rcv_qty'	=>	$row['rcv_qty'],
+				);
+			}
+			$this->site_model->add_tbl_batch('work_order_receive_items',$rows);
+		}
+		if($error == 0){
+			site_alert($msg,'success');
+		}
+		echo json_encode(array('error'=>$error,'msg'=>$msg,"id"=>$id));
+	}	
 	public function types(){
 		$data = $this->syter->spawn('wo_types');
 		$data['code'] = listPage(fa('fa-tags')." Types",'work_order_types','work_order/types_form','list','list',false);

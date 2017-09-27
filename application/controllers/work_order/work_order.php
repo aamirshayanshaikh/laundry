@@ -5,6 +5,23 @@ class Work_order extends CI_Controller {
 		parent::__construct();
 		$this->load->helper('work_order/work_order_helper');
 	}
+	public function create(){
+		$data = $this->syter->spawn('wo_issue');
+		$data['page_title'] = fa('fa-ticket')." Create Work Order";		
+		$materials = array();
+		$new_ref = $this->site_model->get_next_ref(WORK_ORDER_ISSUE_CODE);
+		$lot_no = $this->site_model->get_next_ref(WORK_ORDER_BATCH_CODE);
+		$batch_no = $this->site_model->get_next_ref(WORK_ORDER_LOT_CODE);
+		$today = $this->site_model->get_db_now('php',true);
+
+		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
+		// $data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'uom"','text'=>"<i class='fa fa-fw fa-reply'></i>");
+		sess_initialize('wo-mats',$materials);
+		$data['code'] = create_form($new_ref,$lot_no,$batch_no,$today);
+		$data['load_js'] = 'work_order/work_order';
+		$data['use_js'] = 'create_form';
+		$this->load->view('page',$data);
+	}
 	public function receive(){
 		$data = $this->syter->spawn('wo_rcv');
 		$data['page_title'] = fa('fa-inbox')." Receive Items";		
@@ -81,6 +98,52 @@ class Work_order extends CI_Controller {
 		$data = $this->syter->spawn('wo_types');
 		$data['code'] = listPage(fa('fa-tags')." Types",'work_order_types','work_order/types_form','list','list',false);
 		$this->load->view('list',$data);
+	}
+	public function get_types_details($id){
+		$details   = array();
+		$materials = array();
+		$items 	   = array();
+		$res_details = $this->site_model->get_tbl('work_order_types',array('id'=>$id));
+		$details['main_uom'] = $res_details[0]->uom;
+		$join = array('materials'=>"work_order_type_materials.mat_id = materials.id");
+		$select = "work_order_type_materials.*,materials.name as mat_name";
+		$res_materials = $this->site_model->get_tbl('work_order_type_materials',array('type_id'=>$id),array(),$join,true,$select);
+		foreach ($res_materials as $res) {
+			$materials[] = array(
+								 'cost' => $res->cost,	
+								 'cost_total_hid' => numInt($res->cost * $res->order_qty),	
+								 'ord_qty' => $res->order_qty,	
+								 'mat_id' => $res->mat_id,	
+								 'mat_name' => $res->mat_name
+								);	
+		}
+		sess_initialize('wo-mats',$materials);
+		$select = "work_order_receive_items.*,work_order_receives.reference as rec_ref,work_order_receives.rcv_date as rcv_date,
+				   work_order_receives.customer_id as cust_id,customers.name as cust_name,
+				   items.name as item_name,items.uom as item_uom,";
+		$join = array(
+					  'work_order_receives'=>"work_order_receive_items.rcv_id = work_order_receives.id",
+					  'customers'=>"work_order_receives.customer_id = customers.id",
+					  'work_order_type_items'=>"work_order_receive_items.item_id = work_order_type_items.item_id",
+					  'items'=>"work_order_receive_items.item_id = items.id",
+					 );
+		$args = array('work_order_type_items.type_id'=>$id);
+		$order = array('work_order_receives.rcv_date'=>'ASC');
+		$res_items = $this->site_model->get_tbl('work_order_receive_items',$args,$order,$join,true,$select);
+		foreach ($res_items as $itm) {
+			$items[] = array(
+				'rcv_id' 	=> $itm->rcv_id,
+				'rcv_date'	=> sql2Date($itm->rcv_date),
+				'ref' 		=> $itm->rec_ref,
+				'cust_id' 	=> $itm->cust_id,
+				'cust_name' => $itm->cust_name,
+				'item_id' 	=> $itm->item_id,
+				'item_name'	=> $itm->item_name,
+				'rcv_total'	=> num($itm->rcv_qty),
+				'uom'		=> $itm->item_uom,
+			);
+		}
+		echo json_encode(array('details'=>$details,'materials'=>$materials,'items'=>$items));	
 	}
 	public function types_form($id=null){
 		$data = $this->syter->spawn('wo_types');

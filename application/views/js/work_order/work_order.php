@@ -213,6 +213,107 @@ $(document).ready(function(){
                                 $('#item_id').val('').trigger('change');
                             }
         });
+	<?php elseif($use_js == 'create_form'): ?>
+		$('#save-btn').click(function(){
+			var btn = $(this);
+			var noError = $('#general-form').rOkay({
+                btn_load        :   btn,
+				bnt_load_remove	: 	true,
+				asJson			: 	true,
+				onComplete		: 	function(data){
+										if(data.error == 0){
+											location.reload();
+										}
+										else{
+											$.alertMsg({msg:data.msg,type:'error'});
+										}
+									},
+    		});
+			return false;
+    	});
+		$('#type_id').change(function(){
+			var type_id = $(this).val();
+			var items_tbl = $('#items-tbl tbody');
+			items_tbl.html('');
+			if(type_id != ""){
+				$.post(baseUrl+'work_order/get_types_details/'+type_id,function(data){
+					var details = data.details;
+					var items = data.items;
+					var materials = data.materials;
+					$.each(items,function(ictr,itm){
+						var tr = $('<tr class="tbl-line-row"></tr>');
+						tr.append(
+									'<td>'+itm['rcv_date']+'<input type="hidden" name="rcvs['+ictr+']" value="'+itm['rcv_id']+'"></td>'+
+									'<td>'+itm['ref']+'</td>'+
+									'<td>'+itm['cust_name']+'<input type="hidden" name="custs['+ictr+']" value="'+itm['cust_id']+'"></td>'+
+									'<td>'+itm['item_name']+'<input type="hidden" name="items['+ictr+']" value="'+itm['item_id']+'"></td>'+
+									'<td>'+itm['rcv_total']+'</td>'+
+									'<td>'+itm['uom']+'</td>'+
+									'<td><div class="form-group"><input style="width:100px;" type="text" name="woqty['+ictr+']" value="0.00" class=" form-control numbers-only" decimal="2"></div></td>'
+								 );
+						items_tbl.append(tr);
+					});
+					$('#wo-mats').rCartLoad({'columns':['mat_name','ord_qty','cost','cost_total_hid']});	
+				},'json').fail( function(xhr, textStatus, errorThrown) {
+		          console.log(xhr.responseText);
+		        });
+			}
+			else{
+				items_tbl.html('<tr class="no-row"><td colspan="100%"><center>Select Type</center></td></tr>');
+			}
+		});
+		$('#mat_id').change(function(){
+    		var val = $(this).val();
+    		var selected = $(this).find("option:selected");
+    		if(val != ""){
+    			$('#cost').val(selected.attr('cost'));
+    			$('#mat_name').val(selected.text());
+    		}
+    		var total = 0;
+    		$('#ord_qty').val('').focus();
+    		$('#cost_total').html(total.toFixed(2));
+    		$('#cost_total_hid').val(total.toFixed(2));
+    	});
+    	$('#ord_qty,#cost').blur(function(){
+    		totalLine();
+    	});
+    	function totalLine(){
+    		var total = 0;
+    		if(parseFloat($('#cost').val()) > 0 && parseFloat($('#ord_qty').val()) > 0){
+    			var total = parseFloat($('#cost').val()) * parseFloat($('#ord_qty').val());
+    		}
+    		$('#cost_total').html(total.toFixed(2));
+    		$('#cost_total_hid').val(total.toFixed(2));
+    	}
+    	///-------------------------------------------------
+    	$('#wo-mats').rCart({
+    		'columns'	: 	['mat_name','ord_qty','cost','cost_total_hid'],
+    		'beforeAdd' : 	function(){
+    							var goAdd = true;
+    							if(parseFloat($('#ord_qty').val()) <= 0){
+    								goAdd = false;
+    								$.alertMsg({msg:'Invalid Qty',type:'error'});
+    							}
+	    						// 	else{
+	    						// 		$.post(baseUrl+'cart/check_cart/type-mats/mat_id/'+$('#mat_id').val(),function(data){
+								   //        	if(data.error != ""){
+											// 	$.alertMsg({msg:data.error,type:'error'});
+											// 	goAdd = false;
+											// }
+								   //      },'json').fail( function(xhr, textStatus, errorThrown) {
+								   //        console.log(xhr.responseText);
+								   //      });
+	    						// 	}
+    							return goAdd;
+    						},
+    		'afterAdd'	:   function(){
+    							var total = 0;
+    							$('#ord_qty').val('').focus();
+    							$('#cost_total').html(total.toFixed(2));
+    							$('#cost_total_hid').val(total.toFixed(2));
+    							$('#mat_id').val('').trigger('change');
+    						}
+    	});
 	<?php endif; ?>
 });
 </script>

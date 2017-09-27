@@ -479,3 +479,14 @@ ul.draggable li .icon-move{
   display: inline-block;
   margin-right: 5px;
 }
+
+.tbl-line-row td:last-child{
+    text-align: right !important;
+}
+.tbl-line-row td .paper-select .btn-default{
+  border-bottom: 1px solid #ddd !important;
+}
+.tbl-line-row td input{
+  border: 0;
+  border-bottom: 1px solid #ddd !important;
+}

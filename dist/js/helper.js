@@ -597,7 +597,7 @@
       }
     },'json');
     function addEditRow(cart_name,inputCols,id,row){
-      var tr = $('<tr id="'+cart_name+'-'+id+'" ></tr>');
+      var tr = $('<tr id="'+cart_name+'-'+id+'" class="rcart-rows"></tr>');
       $.each(inputCols,function(ctr,col){
         tr.append('<td>'+row[col]+'</td>');
       });
@@ -609,6 +609,41 @@
       tr.append(tdLast);
       tr.prependTo("#"+cart_name+" tbody");  
       opt.afterAdd.call(this);       
+      removeBtn.click(function(){
+        $.post(baseUrl+'cart/remove/'+cart_name+'/'+id,function(data){
+          $('#'+cart_name+' tbody #'+cart_name+'-'+id).remove();
+        });
+        return false;
+      });
+    }
+  }
+  $.fn.rCartLoad = function(options){
+    var opt = $.extend({
+      cart      :     this.attr('id'),
+      columns   :     [],
+    },options);
+    var cart_name = opt.cart;
+    var inputCols = opt.columns; 
+    $('#'+cart_name+' tbody .rcart-rows').remove();
+    $.post(baseUrl+'cart/all/'+cart_name,function(data){
+      if(data.length > 0){
+        $.each(data,function(id,row){
+          addEditRow(cart_name,inputCols,id,row);
+        });
+      }
+    },'json');
+    function addEditRow(cart_name,inputCols,id,row){
+      var tr = $('<tr id="'+cart_name+'-'+id+'" class="rcart-rows"></tr>');
+      $.each(inputCols,function(ctr,col){
+        tr.append('<td>'+row[col]+'</td>');
+      });
+      var tdLast = $('<td style="text-align:right"></td>');
+      // var editBtn = $('<a href="#"><i class="fa fa-edit fa-lg fa-fw"></i></a>'); 
+      var removeBtn = $('<a href="#"><i class="fa fa-times fa-lg fa-fw"></i></a>');
+      // tdLast.append(editBtn);
+      tdLast.append(removeBtn);
+      tr.append(tdLast);
+      tr.prependTo("#"+cart_name+" tbody");  
       removeBtn.click(function(){
         $.post(baseUrl+'cart/remove/'+cart_name+'/'+id,function(data){
           $('#'+cart_name+' tbody #'+cart_name+'-'+id).remove();

@@ -10,6 +10,11 @@ class Locations extends CI_Controller {
 		$data['code'] = listPage(fa('fa-home')." Locations",'locations','locations/form','list','list',false);
 		$this->load->view('list',$data);
 	}
+	public function moves(){
+		$data = $this->syter->spawn('moves');
+		$data['code'] = listPage(fa('fa-recycle')." Inventory Moves",'inventory_moves','','list','list',false);
+		$this->load->view('list',$data);
+	}
 	public function form($id=null){
 		$data = $this->syter->spawn('locs');
 		$data['page_title'] = fa('fa-home')." Locations";

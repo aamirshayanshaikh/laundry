@@ -1310,11 +1310,11 @@ class Html{
 				if(!isset($selectParams['return']))
 					$selectParams['return'] = true;
 
-				$results=$CI->site_model->get_custom_val('materials',array('id,name','cost'),null,null,true);
+				$results=$CI->site_model->get_custom_val('materials',array('id,name','cost','uom'),null,null,true);
 				$opts  = array();
 				$opts['Select Material']  = "";
 				foreach ($results as $res) {
-					$opts[ucFix($res->name)] = array('value'=>$res->id,'cost'=>$res->cost);
+					$opts[ucFix($res->name)] = array('value'=>$res->id,'cost'=>$res->cost,'uom'=>$res->uom);
 				}
 				$str .= $this->select($label,$nameID,$opts,$value,$selectParams);
 			if($this->returnitize($params)) return $str; else $this->code .= $str;

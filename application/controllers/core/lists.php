@@ -586,6 +586,59 @@ class Lists extends CI_Controller {
         }
         echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
     }
+    public function inventory_moves(){
+        $total_rows = 30;
+        $pagi = null;
+        if($this->input->post('pagi'))
+            $pagi = $this->input->post('pagi');
+       
+        $post = array();
+        $args = array();
+        $join = array();
+        $order = array();
+        
+        $page_link = 'lists/inventory_moves';
+        $cols = array('Date','Reference','Description','Qty In','Qty Out','UOM','Location','Trans Type','Remarks','');
+        $table = 'inventory_moves';
+        $select = 'inventory_moves.*,locations.name as loc_name,materials.name as mat_name,materials.uom as mat_uom,
+                   trans_types.description as trans_type_name';
+        $join['locations'] = "inventory_moves.loc_id = locations.id";
+        $join['materials'] = "inventory_moves.mat_id = materials.id";
+        $join['trans_types'] = "inventory_moves.trans_type = trans_types.type_id";
+        $order['inventory_moves.trans_date'] = 'desc';
+        $order['inventory_moves.id'] = 'desc';
+        $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
+        $page = paginate($page_link,$count,$total_rows,$pagi);
+        $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
+        $json = array();
+        if(count($items) > 0){
+            $ids = array();
+            foreach ($items as $res) {
+                $qty_in = 0;
+                $qty_out = 0;
+                if($res->qty > 0)
+                    $qty_in = $res->qty;
+                else
+                    $qty_out = $res->qty;
+                $memo = "";
+                if($res->memo)
+                    $memo = $res->memo;
+                $json[] = array(
+                    "date"=> sql2Date($res->trans_date),   
+                    "reference"=>strtoupper($res->trans_ref),   
+                    "mat_name"=>ucFix($res->mat_name),   
+                    "qty_in"=>num($qty_in),   
+                    "qty_out"=>num($qty_out),   
+                    "uom"=>strtoupper($res->mat_uom),   
+                    "loc_name"=>ucFix($res->loc_name),   
+                    "trans_type_name"=>ucFix($res->trans_type_name),   
+                    "memo"=>$memo,                  
+                    "link"=>'',                  
+                );
+            }
+        }
+        echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
+    }
     public function work_order_stages($tbl=null){
         $total_rows = 30;
         $pagi = null;
@@ -650,6 +703,57 @@ class Lists extends CI_Controller {
                     "id"=>$res->id,   
                     "title"=>strtoupper($res->name),   
                     "description"=>ucFix($res->description),   
+                    "link"=>$link
+                );
+            }
+        }
+        echo json_encode(array('cols'=>$cols,'rows'=>$json,'pagi'=>$page['code'],'post'=>$post));
+    }
+    public function work_orders(){
+        $total_rows = 30;
+        $pagi = null;
+        if($this->input->post('pagi'))
+            $pagi = $this->input->post('pagi');
+       
+        $post = array();
+        $args = array();
+        $join = array();
+        $order = array();
+        
+        $page_link = 'lists/work_orders';
+        $cols = array('ID','Reference','Batch No.','Lot No.','Type','Total Weight','UOM','Work Order Date','Current Stage','Status',' ');
+        $table = 'work_orders';
+        $select = 'work_orders.*,work_order_types.name as type_name,work_order_stages.name as stage_name';
+        $join['work_order_types'] = "work_orders.type_id = work_order_types.id";
+        // $join['work_order_stages'] = "work_orders.curr_stage_id = work_order_stages.id";
+        $join['work_order_stages'] = array("content"=>"work_orders.curr_stage_id = work_order_stages.id",
+                                "mode"=>"left");
+        $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
+        $page = paginate($page_link,$count,$total_rows,$pagi);
+        $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
+
+        $json = array();
+        if(count($items) > 0){
+            $ids = array();
+            foreach ($items as $res) {
+                $link = "";
+                if($res->curr_stage_id != 0)
+                    $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'work_order/staging/'.$res->id.'/'.$res->curr_stage_id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+                $progress = "In Progress";
+                if($res->finished == 1){
+                    $progress = "Finished";
+                }
+                $json[$res->id] = array(
+                    "id"=>$res->id,   
+                    "reference"=>strtoupper($res->reference),   
+                    "batch_no"=>strtoupper($res->reference),   
+                    "lot_no"=>strtoupper($res->reference),   
+                    "type_name"=>ucFix($res->type_name),   
+                    "weight"=>num($res->weight),   
+                    "uom"=>$res->uom,   
+                    "wo_date"=>sql2Date($res->wo_date),   
+                    "stage"=>ucFix($res->stage_name),   
+                    "progress"=>$progress,   
                     "link"=>$link
                 );
             }

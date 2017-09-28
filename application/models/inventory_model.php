@@ -12,13 +12,13 @@ class Inventory_model extends Site_Model{
 		}
 		return $curr_qty;
 	}
-	public function move_qty($mat_id,$loc_id,$qty,$ref_type,$ref,$date){
+	public function move_qty($mat_id,$loc_id,$qty,$ref_type,$ref,$date,$memo=null){
 		$curr_qty = $this->get_curr_qty($mat_id,$loc_id);
-
-		if($qty < 0){
-			$curr_qty -= $qty;			
-		}
-		else
+		// echo $curr_qty." - ".$qty;
+		// if($qty < 0){
+		// 	$curr_qty -= $qty;			
+		// }
+		// else
 			$curr_qty += $qty;			
 
 		$items = array(
@@ -29,6 +29,7 @@ class Inventory_model extends Site_Model{
 			'mat_id' 		=> $mat_id,
 			'qty' 			=> $qty,
 			'curr_qty' 		=> $curr_qty,
+			'memo' 			=> $memo,
 		);
 		$id = $this->site_model->add_tbl('inventory_moves',$items,array('reg_date'=>'NOW()'));
 	}

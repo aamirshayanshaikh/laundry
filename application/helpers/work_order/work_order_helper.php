@@ -1,4 +1,191 @@
 <?php
+function history_page($wo=array(),$wo_mats=array(),$stagings=array(),$stagings_mats=array()){
+	$CI =& get_instance();
+	$CI->html->sDivRow();
+		$CI->html->sDivCol();
+			$CI->html->sUl(array('class'=>'timeline'));
+				foreach ($stagings as $stg) {
+					$CI->html->sLi(array('class'=>'time-label'));
+						$CI->html->span(sql2Date(iSetObjDate($stg,'stage_date')),array('class'=>'bg-blue'));
+					$CI->html->eLi();
+					$CI->html->sLi();
+						$CI->html->span('',array('class'=>'fa fa-table bg-gray'));
+						$CI->html->sDiv(array('class'=>'timeline-item'));
+							$CI->html->H(3,'<b>'.iSetObj($stg,'stage_name').'</b>',array('class'=>'timeline-header'));
+							$CI->html->sDiv(array('class'=>'timeline-body'));
+								$CI->html->sDivRow();
+									$CI->html->sDivCol(4);
+										$CI->html->txtPaper('Total Weight:',iSetObj($stg,'weight')." ".iSetObj($stg,'uom'));
+									$CI->html->eDivCol();
+									$CI->html->sDivCol(4);
+										$CI->html->txtPaper('Damaged Weight:',iSetObj($stg,'damage')." ".iSetObj($stg,'uom'));
+									$CI->html->eDivCol();
+									$CI->html->sDivCol(4);
+										$CI->html->txtPaper('Date:',sql2Date(iSetObjDate($stg,'stage_date')));
+									$CI->html->eDivCol();
+								$CI->html->eDivRow();
+								$CI->html->H(4,"",array('class'=>'page-header'));
+								$CI->html->H(4,fa('fa-cubes')." Materials",array('class'=>'form-titler'));
+								$CI->html->sDivRow();
+									$CI->html->sDivCol();
+										$CI->html->sTable(array('class'=>'table paper-table','id'=>'wo-mats'));
+											$CI->html->sTablehead();
+												$CI->html->sRow();
+													$CI->html->th('Material');
+													$CI->html->th('Use Qty Per UOM');
+													$CI->html->th('UOM');
+													$CI->html->th('Cost');
+													$CI->html->th('Total Cost');
+													$CI->html->th('Issued Qty');
+													$CI->html->th('Used Qty');
+												$CI->html->eRow();
+											$CI->html->eTablehead();
+											$CI->html->sTableBody();
+												foreach ($stagings_mats as $mat) {
+													if($stg->id == $mat->wo_stg_id){
+														if($mat->additional == 0){
+															$CI->html->sRow();
+																$CI->html->td($mat->mat_name);
+																$CI->html->td(num($mat->min_qty));
+																$CI->html->td($mat->mat_uom);
+																$CI->html->td(num($mat->cost));
+																$CI->html->td(num($mat->total_cost));
+																$CI->html->td(num($mat->wo_qty));
+																$CI->html->td(num($mat->used_qty));
+															$CI->html->eRow();
+														}
+													}
+												}
+											$CI->html->eTableBody();
+										$CI->html->eTable();
+									$CI->html->eDivCol();
+								$CI->html->eDivRow();	
+								$CI->html->H(4,fa('fa-plus-circle')."Additional Materials",array('class'=>'form-titler'));
+								$CI->html->sDivRow();
+									$CI->html->sDivCol();
+										$CI->html->sTable(array('class'=>'table paper-table','id'=>'add-mats'));
+											$CI->html->sTablehead();
+												$CI->html->sRow();
+													$CI->html->th('Material');
+													$CI->html->th('Used Qty');
+													$CI->html->th('UOM');
+													$CI->html->th('Cost');
+													$CI->html->th('Total Cost');
+													$CI->html->th('');
+												$CI->html->eRow();
+											$CI->html->eTablehead();
+											$CI->html->sTableBody();
+												$ctr = 0;
+												foreach ($stagings_mats as $mat) {
+													if($stg->id == $mat->wo_stg_id){
+														if($mat->additional != 0){
+															$CI->html->sRow();
+																$CI->html->td($mat->mat_name);
+																$CI->html->td(num($mat->min_qty));
+																$CI->html->td($mat->mat_uom);
+																$CI->html->td(num($mat->cost));
+																$CI->html->td(num($mat->total_cost));
+																$CI->html->td(num($mat->wo_qty));
+																$CI->html->td(num($mat->used_qty));
+															$CI->html->eRow();
+															$ctr++;
+														}
+													}
+												}	
+												if($ctr == 0){
+													$CI->html->sRow(array('class'=>'no-row'));
+														$CI->html->td('<center>None</center>',array('colspan'=>'100%'));
+													$CI->html->eRow();
+												}
+											$CI->html->eTableBody();
+										$CI->html->eTable();
+									$CI->html->eDivCol();
+								$CI->html->eDivRow();	
+								if(iSetObj($stg,'memo')){
+									$CI->html->H(4,'<b>Remarks:</b>');
+									$CI->html->span(iSetObj($stg,'memo'));								
+								}
+							$CI->html->eDiv();
+						$CI->html->eDiv();
+					$CI->html->eLi();
+				}
+				#----------- CREATE -----------
+				$CI->html->sLi(array('class'=>'time-label'));
+					$CI->html->span(sql2Date(iSetObjDate($wo,'wo_date')),array('class'=>'bg-blue'));
+				$CI->html->eLi();
+				$CI->html->sLi();
+					$CI->html->span('',array('class'=>'fa fa-edit bg-gray'));
+					$CI->html->sDiv(array('class'=>'timeline-item'));
+						$CI->html->H(3,'<b>Work Order Created</b>',array('class'=>'timeline-header'));
+						$CI->html->sDiv(array('class'=>'timeline-body'));
+							$CI->html->sDivRow();
+								$CI->html->sDivCol(3);
+									$CI->html->txtPaper('Reference:',iSetObj($wo,'reference'));
+								$CI->html->eDivCol();
+								$CI->html->sDivCol(3);
+									$CI->html->txtPaper('Batch No.:',iSetObj($wo,'batch_no'));
+								$CI->html->eDivCol();
+								$CI->html->sDivCol(3);
+									$CI->html->txtPaper('Lot No.:',iSetObj($wo,'lot_no'));
+								$CI->html->eDivCol();
+								$CI->html->sDivCol(3);
+									$CI->html->txtPaper('Create Date:',iSetObjDate($wo,'wo_date'));
+								$CI->html->eDivCol();
+							$CI->html->eDivRow();
+							$CI->html->sDivRow();
+								$CI->html->sDivCol(3);
+									$CI->html->txtPaper('Work Order Type:',iSetObj($wo,'type_name'));
+								$CI->html->eDivCol();
+								$CI->html->sDivCol(3);
+									$CI->html->txtPaper('Total Weight:',iSetObj($wo,'weight')." ".iSetObj($wo,'uom'));
+								$CI->html->eDivCol();
+							$CI->html->eDivRow();
+							$CI->html->H(4,"",array('class'=>'page-header'));
+							$CI->html->H(4,fa('fa-cubes')." Materials",array('class'=>'form-titler'));
+							$CI->html->sDivRow();
+								$CI->html->sDivCol();
+									$CI->html->sTable(array('class'=>'table paper-table'));
+										$CI->html->sTablehead();
+											$CI->html->sRow();
+												$CI->html->th('Material');
+												$CI->html->th('Use Qty Per UOM');
+												$CI->html->th('UOM');
+												$CI->html->th('Issue Qty');
+												$CI->html->th('Cost');
+												$CI->html->th('Total Cost');
+											$CI->html->eRow();
+										$CI->html->eTablehead();
+										$CI->html->sTableBody();
+											foreach ($wo_mats as $mat) {
+												$CI->html->sRow();
+													$CI->html->td($mat->mat_name);
+													$CI->html->td(num($mat->min_qty));
+													$CI->html->td($mat->mat_uom);
+													$CI->html->td(num($mat->wo_qty));
+													$CI->html->td(num($mat->cost));
+													$CI->html->td(num($mat->total_cost));
+												$CI->html->eRow();
+											}
+										$CI->html->eTableBody();
+									$CI->html->eTable();
+								$CI->html->eDivCol();
+							$CI->html->eDivRow();	
+							if(iSetObj($wo,'memo')){
+								$CI->html->H(4,'<b>Remarks:</b>');
+								$CI->html->span(iSetObj($wo,'memo'));								
+							}
+						$CI->html->eDiv();
+					$CI->html->eDiv();
+				$CI->html->eLi();
+				#------------------------------
+				$CI->html->sLi();
+					$CI->html->span('',array('class'=>'fa fa-clock-o bg-gray'));
+				$CI->html->eLi();
+			$CI->html->eUl();
+		$CI->html->eDivCol();
+	$CI->html->eDivRow();
+	return $CI->html->code();
+}
 function create_form($new_ref="",$lot_no="",$batch_no="",$today=""){
 	$CI =& get_instance();
 	$CI->html->sDivRow();

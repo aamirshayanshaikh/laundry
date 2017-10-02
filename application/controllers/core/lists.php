@@ -739,6 +739,7 @@ class Lists extends CI_Controller {
                 $link = "";
                 if($res->curr_stage_id != 0)
                     $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'work_order/staging/'.$res->id.'/'.$res->curr_stage_id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+                $link .= $this->html->A(fa('fa-table fa-lg fa-fw'),base_url().'work_order/history/'.$res->id,array('style'=>'margin-left:10px;','class'=>'btn btn-sm btn-info btn-flat','return'=>'true'));
                 $progress = "In Progress";
                 if($res->finished == 1){
                     $progress = "Finished";

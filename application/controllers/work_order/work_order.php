@@ -10,6 +10,43 @@ class Work_order extends CI_Controller {
 		$data['code'] = listPage(fa('fa-ticket')." Work Orders",'work_orders','work_order/create','list','list',false);
 		$this->load->view('list',$data);
 	}
+	public function history($wo_id=null){
+		$data = $this->syter->spawn('wo_staging');
+		$wo = array();
+		$select = 'work_orders.*,work_order_types.name as type_name';
+		$join = array('work_order_types'=>"work_orders.type_id = work_order_types.id");
+		$wo_order = $this->site_model->get_tbl('work_orders',array('work_orders.id'=>$wo_id),array(),$join,true,$select);	
+		if($wo_order)
+			$wo = $wo_order[0];
+		else{
+			redirect(base_url().'work_order');
+			site_alert('Work Order not found.','error');
+		}
+		$select = "work_order_materials.*,materials.name as mat_name,materials.uom as mat_uom";
+		$join = array('materials'=>"work_order_materials.mat_id = materials.id");
+		$wo_mats = $this->site_model->get_tbl('work_order_materials',array('wo_id'=>$wo_id),array(),$join,true,$select);	
+
+		$join = array();
+		$select = "work_orders_staging.*,work_order_stages.name as stage_name,";
+		$join['work_order_stages'] = "work_orders_staging.stage_id = work_order_stages.id";
+		$stagings = $this->site_model->get_tbl('work_orders_staging',array('wo_id'=>$wo_id),array('order'=>'desc'),$join,true,$select);
+		$stg_ids = array();
+		foreach ($stagings as $stg) {
+			$stg_ids[] = $stg->id;
+		}
+		$stagings_mats = array();
+		if(count($stg_ids) > 0){
+			$join = array();
+			$select = "work_orders_staging_materials.*,materials.name as mat_name,materials.uom as mat_uom";
+			$join = array('materials'=>"work_orders_staging_materials.mat_id = materials.id");
+			$stagings_mats = $this->site_model->get_tbl('work_orders_staging_materials',array('wo_stg_id'=>$stg_ids),array(),$join,true,$select);
+		}
+
+		$data['page_title'] = fa('fa-table')." Work Order Ref# ".$wo->reference." history";	
+		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'work_order"','text'=>"<i class='fa fa-fw fa-reply'></i>");
+		$data['code'] = history_page($wo,$wo_mats,$stagings,$stagings_mats);
+		$this->load->view('page',$data);
+	}
 	public function staging($wo_id=null,$stage_id=null){
 		$data = $this->syter->spawn('wo_staging');
 		$stgd = array();
@@ -54,20 +91,24 @@ class Work_order extends CI_Controller {
 		sess_initialize('add-mats',array());
 
 
-		$last = 0;
 		$curr_stage_id = $stage_id;
-		$csid_res = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$wod->type_id,'stage_id'=>$curr_stage_id),array('order'=>'asc'));
-		if($csid_res){
-			$next_order = (int)$csid_res[0]->order+1;
-			$csid_ress = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$this->input->post('type_id'),'order'=>$next_order),array('order'=>'asc'));
-			if(!$csid_ress){
-				$last = 1;
+		$last = 0;
+		$check_stage = $this->site_model->get_tbl('work_orders_staging',array('wo_id'=>$wo_id),array('order'=>'asc'));
+
+		if($check_stage){
+			$csid_res = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$wod->type_id,'stage_id'=>$curr_stage_id),array('order'=>'asc'));
+			if($csid_res){
+				$next_order = (int)$csid_res[0]->order+1;
+				$csid_ress = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$this->input->post('type_id'),'order'=>$next_order),array('order'=>'asc'));
+				if(!$csid_ress){
+					$last = 1;
+				}
 			}
 		}
 
 
 		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
-		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'staging"','text'=>"<i class='fa fa-fw fa-reply'></i>");
+		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'"','text'=>"<i class='fa fa-fw fa-reply'></i>");
 		$data['code'] = staging_form($wod,$stgd,$materials,$today,$last);
 		$data['load_js'] = 'work_order/work_order';
 		$data['use_js'] = 'staging_form';

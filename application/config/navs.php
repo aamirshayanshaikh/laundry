@@ -26,6 +26,8 @@ $nav['inventory'] = array('title'=>'<i class="fa fa-cube"></i> Inventory','path'
 		// $work_order['wo_rcv'] = array('title'=>'Receive Items','path'=>'work_order/receive','exclude'=>0);
 		$work_order['wo_issue'] = array('title'=>'Create','path'=>'work_order/create','exclude'=>0);
 		$work_order['wo_staging'] = array('title'=>'Staging','path'=>'work_order','exclude'=>0);
+	$work_order['wo-inquiries'] = array('title'=>'Inquiries','path'=>null,'exclude'=>0);	
+		$work_order['wo_inq'] = array('title'=>'Work Order List','path'=>'work_order','exclude'=>0);
 	$work_order['wo-maintenance'] = array('title'=>'Maintenance','path'=>null,'exclude'=>0);	
 		$work_order['wo_types'] = array('title'=>'Types','path'=>'work_order/types','exclude'=>0);
 		$work_order['wo_stages'] = array('title'=>'Stages','path'=>'work_order/stages','exclude'=>0);

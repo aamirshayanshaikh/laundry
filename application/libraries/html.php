@@ -948,6 +948,25 @@ class Html{
 	    	$str .= $this->eTag('div');
 	    	if($this->returnitize($params)) return $str; else $this->code .= $str;
 	    }
+	    function txtPaper($label=null,$value=null,$params=array()){
+	    	$str = "";
+	    	$str .= $this->sTag('div',array('class'=>'row div-under-no-spaces'));
+	    		if($label != ""){
+	    			$str .= $this->sTag('div',array('class'=>'col-sm-4 text-left'));
+	    				$str .= $this->tag('H4',$label,array('class'=>'paper-label'));
+	    			$str .= $this->eTag('div');
+	    		}
+	    		$wi = 'col-sm-12';
+	    		if($label != ""){
+	    			$wi = 'col-sm-8';
+	    		}	
+	    		$str .= $this->sTag('div',array('class'=>$wi.' text-left'));
+	    				$params = $this->classitize($params);
+	    				$str .= $this->tag('span',$value,$params,true);
+	    		$str .= $this->eTag('div');
+	    	$str .= $this->eTag('div');
+	    	if($this->returnitize($params)) return $str; else $this->code .= $str;
+	    }
 	    function inputPwd($label=null,$nameID=null,$value=null,$placeholder=null,$params=array(),$feedback=null){
 	    	$str = "";
 	    	$str .= $this->sTag('div',array('class'=>'row div-under-no-spaces'));

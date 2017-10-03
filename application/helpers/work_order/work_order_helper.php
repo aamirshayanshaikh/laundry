@@ -1,5 +1,5 @@
 <?php
-function history_page($wo=array(),$wo_mats=array(),$stagings=array(),$stagings_mats=array()){
+function history_page($wo=array(),$wo_mats=array(),$stagings=array(),$stagings_mats=array(),$stagings_produced=array()){
 	$CI =& get_instance();
 	$CI->html->sDivRow();
 		$CI->html->sDivCol();
@@ -24,6 +24,15 @@ function history_page($wo=array(),$wo_mats=array(),$stagings=array(),$stagings_m
 										$CI->html->txtPaper('Date:',sql2Date(iSetObjDate($stg,'stage_date')));
 									$CI->html->eDivCol();
 								$CI->html->eDivRow();
+								if(count($stagings_produced)){
+									$CI->html->sDivRow();
+										foreach ($stagings_produced as $prd) {
+											$CI->html->sDivCol(4);
+												$CI->html->txtPaper($prd->item_name.':',num($prd->qty).' '.$prd->uom);
+											$CI->html->eDivCol();
+										}
+									$CI->html->eDivRow();
+								}
 								$CI->html->H(4,"",array('class'=>'page-header'));
 								$CI->html->H(4,fa('fa-cubes')." Materials",array('class'=>'form-titler'));
 								$CI->html->sDivRow();
@@ -345,8 +354,8 @@ function types_form($det=array(),$stages=array(),$items=array()){
 							$tabs = array( 
 										  fa('fa-info-circle').' General Details'=>array('href'=>'#general-pane'),
 										  fa('fa-cubes').' Materials'=>array('href'=>'#mats-pane'),
-										  // fa('fa-sticky-note-o').' Items'=>array('href'=>'#items-pane'),
 										  fa('fa-refresh').' Stages'=>array('href'=>'#stages-pane'),
+										  fa('fa-sticky-note-o').' Produced Items'=>array('href'=>'#items-pane'),
 										 );
 							$CI->html->tabHead($tabs,null,array());
 							$CI->html->sTabBody();
@@ -428,33 +437,33 @@ function types_form($det=array(),$stages=array(),$items=array()){
 								$CI->html->eTabPane();
 								# STAGES END
 								# ITEMS START
-								// $CI->html->sTabPane(array('id'=>'items-pane','class'=>'tab-pane'));
-								// 	$CI->html->sDivRow(array('style'=>'margin-bottom:20px;'));
-								// 		$CI->html->sDivCol();
-								// 			$CI->html->sDivRow();
-								// 				$CI->html->sDivCol(8);
-								// 					$CI->html->woItemsDropPaper(null,'item_id',iSetObj($det,'item_id'),null,array());
-								// 				$CI->html->eDivCol();
-								// 				$CI->html->sDivCol(2);
-								// 					$CI->html->button('Add',array('id'=>'add-item','class'=>'btn-flat btn-block btn-sm'),'info');
-								// 				$CI->html->eDivCol();
-								// 			$CI->html->eDivRow();
-								// 		$CI->html->eDivCol();
-								// 	$CI->html->eDivRow();
-								// 	$CI->html->sDivRow();
-								// 		$CI->html->sDivCol(6);
-								// 			$CI->html->sUl(array('id'=>'item-list','class'=>'draggable'));
-								// 				foreach ($items as $line => $row) {
-								// 					$CI->html->sLi(array('id'=>'item-'.$row['item_id'],'ref'=>$row['item_id']));
-								// 						$CI->html->span("",array('class'=>'fa fa-bars icon-move'));
-								// 						$CI->html->span($row['item_name']);
-								// 						$CI->html-> A(fa('fa-times fa-lg'),'#',array('class'=>'pull-right','style'=>'margin-top:1px;'));													
-								// 					$CI->html->eLi();
-								// 				}
-								// 			$CI->html->eUl();
-								// 		$CI->html->eDivCol();
-								// 	$CI->html->eDivRow();
-								// $CI->html->eTabPane();
+								$CI->html->sTabPane(array('id'=>'items-pane','class'=>'tab-pane'));
+									$CI->html->sDivRow(array('style'=>'margin-bottom:20px;'));
+										$CI->html->sDivCol();
+											$CI->html->sDivRow();
+												$CI->html->sDivCol(8);
+													$CI->html->woItemsDropPaper(null,'item_id',iSetObj($det,'item_id'),null,array());
+												$CI->html->eDivCol();
+												$CI->html->sDivCol(2);
+													$CI->html->button('Add',array('id'=>'add-item','class'=>'btn-flat btn-block btn-sm'),'info');
+												$CI->html->eDivCol();
+											$CI->html->eDivRow();
+										$CI->html->eDivCol();
+									$CI->html->eDivRow();
+									$CI->html->sDivRow();
+										$CI->html->sDivCol(6);
+											$CI->html->sUl(array('id'=>'item-list','class'=>'draggable'));
+												foreach ($items as $line => $row) {
+													$CI->html->sLi(array('id'=>'item-'.$row['item_id'],'ref'=>$row['item_id']));
+														$CI->html->span("",array('class'=>'fa fa-bars icon-move'));
+														$CI->html->span($row['item_name']);
+														$CI->html-> A(fa('fa-times fa-lg'),'#',array('class'=>'pull-right','style'=>'margin-top:1px;'));													
+													$CI->html->eLi();
+												}
+											$CI->html->eUl();
+										$CI->html->eDivCol();
+									$CI->html->eDivRow();
+								$CI->html->eTabPane();
 								# ITEMS END
 							$CI->html->eTabBody();
 						$CI->html->eTab();
@@ -526,7 +535,7 @@ function receive_form($new_ref="",$today=""){
 	$CI->html->eDivRow();
 	return $CI->html->code();
 }
-function staging_form($wod=array(),$stg=array(),$stg_mats=array(),$today="",$last=0){
+function staging_form($wod=array(),$stg=array(),$stg_mats=array(),$today="",$last=0,$produce=array()){
 	$CI =& get_instance();
 	$CI->html->sDivRow();
 		$CI->html->sDivCol(10,'left',1);
@@ -555,18 +564,12 @@ function staging_form($wod=array(),$stg=array(),$stg_mats=array(),$today="",$las
 								$CI->html->eDivCol();
 							$CI->html->eDivRow();
 							$CI->html->sDivRow(array('style'=>'margin-bottom:10px;'));
-								$CI->html->sDivCol(4);
-									$CI->html->inputPaper('Total Qty(small):','small',null,null,array());
-								$CI->html->eDivCol();
-								$CI->html->sDivCol(4);
-									$CI->html->inputPaper('Total Qty(meduim):','meduim',null,null,array());
-								$CI->html->eDivCol();
-								$CI->html->sDivCol(4);
-									$CI->html->inputPaper('Total Qty(large):','large',null,null,array());
-								$CI->html->eDivCol();
-								$CI->html->sDivCol(4);
-									$CI->html->inputPaper('Total Damage Items:','damage',null,null,array());
-								$CI->html->eDivCol();
+								foreach ($produce as $itmctr => $itm) {
+									$CI->html->sDivCol(4);
+										$CI->html->inputPaper($itm['name'].' ('.$itm['uom'].'):','itm['.$itm['id'].']',null,null,array());
+										$CI->html->hidden('itmuom['.$itm['id'].']',$itm['uom']);
+									$CI->html->eDivCol();
+								}
 							$CI->html->eDivRow();
 						}
 						else{

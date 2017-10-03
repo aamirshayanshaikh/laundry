@@ -41,10 +41,17 @@ class Work_order extends CI_Controller {
 			$join = array('materials'=>"work_orders_staging_materials.mat_id = materials.id");
 			$stagings_mats = $this->site_model->get_tbl('work_orders_staging_materials',array('wo_stg_id'=>$stg_ids),array(),$join,true,$select);
 		}
+		$stagings_produced = array();
+		if(count($stg_ids) > 0){
+			$join = array();
+			$select = "work_orders_produced.*,items.name as item_name,items.uom as item_uom";
+			$join = array('items'=>"work_orders_produced.item_id = items.id");
+			$stagings_produced = $this->site_model->get_tbl('work_orders_produced',array('wo_stg_id'=>$stg_ids),array(),$join,true,$select);
+		}
 
 		$data['page_title'] = fa('fa-table')." Work Order Ref# ".$wo->reference." history";	
 		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'work_order"','text'=>"<i class='fa fa-fw fa-reply'></i>");
-		$data['code'] = history_page($wo,$wo_mats,$stagings,$stagings_mats);
+		$data['code'] = history_page($wo,$wo_mats,$stagings,$stagings_mats,$stagings_produced);
 		$this->load->view('page',$data);
 	}
 	public function staging($wo_id=null,$stage_id=null){
@@ -94,22 +101,34 @@ class Work_order extends CI_Controller {
 		$curr_stage_id = $stage_id;
 		$last = 0;
 		$check_stage = $this->site_model->get_tbl('work_orders_staging',array('wo_id'=>$wo_id),array('order'=>'asc'));
-
 		if($check_stage){
 			$csid_res = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$wod->type_id,'stage_id'=>$curr_stage_id),array('order'=>'asc'));
 			if($csid_res){
 				$next_order = (int)$csid_res[0]->order+1;
-				$csid_ress = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$this->input->post('type_id'),'order'=>$next_order),array('order'=>'asc'));
+				$csid_ress = $this->site_model->get_tbl('work_order_type_stages',array('type_id'=>$wod->type_id,'order'=>$next_order),array('order'=>'asc'));
 				if(!$csid_ress){
 					$last = 1;
 				}
 			}
 		}
 
+		$produce = array();
+		if($last != 0){
+			$join = array('items' => "work_order_type_items.item_id = items.id");
+			$select = "work_order_type_items.*,items.name as item_name,items.uom as item_uom";
+			$result_details = $this->site_model->get_tbl('work_order_type_items',array('type_id'=>$wod->type_id),array(),$join,true,$select);
+			foreach ($result_details as $res) {
+				$produce[] = array(
+					'id'		=>	$res->item_id,
+					'name'		=>	$res->item_name,
+					'uom'		=>	$res->item_uom,
+				);
+			}
+		}
 
 		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
-		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'"','text'=>"<i class='fa fa-fw fa-reply'></i>");
-		$data['code'] = staging_form($wod,$stgd,$materials,$today,$last);
+		$data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'work_order"','text'=>"<i class='fa fa-fw fa-reply'></i>");
+		$data['code'] = staging_form($wod,$stgd,$materials,$today,$last,$produce);
 		$data['load_js'] = 'work_order/work_order';
 		$data['use_js'] = 'staging_form';
 		$this->load->view('page',$data);
@@ -118,6 +137,7 @@ class Work_order extends CI_Controller {
 		$user = sess('user');
 		$materials = sess('stage-mats');
 		$addons = sess('add-mats');
+
 		$items = array(
 		    "wo_id"=>$this->input->post('wo_id'),
 		    "order"=>$this->input->post('order'),
@@ -191,6 +211,22 @@ class Work_order extends CI_Controller {
 				$this->load->model('inventory_model');
 				foreach ($addons as $lid => $row) {
 					$this->inventory_model->move_qty($row['mat_id'],1,($row['add_on_qty'] * -1),WORK_ORDER_ISSUE_CODE,$this->input->post('ref'),date2Sql($this->input->post('stg_date')),'Additional - '.$this->input->post('stg_name'));
+				}
+			}
+			if($this->input->post('itm')){
+				$uoms = $this->input->post('itmuom');
+				$produce = array();
+				foreach ($this->input->post('itm') as $item_id => $qty) {
+					$produce[] = array(
+						'wo_id'		=>	$this->input->post('wo_id'),
+						'wo_stg_id'	=>	$id,
+						'item_id'	=>	$item_id,
+						'qty'		=>	$qty,
+						'uom'		=>	$uoms[$item_id],
+					);
+				}
+				if(count($produce) > 0){
+					$this->site_model->add_tbl_batch('work_orders_produced',$produce);
 				}
 			}
 		}
@@ -515,10 +551,10 @@ class Work_order extends CI_Controller {
 			echo json_encode(array('error'=>1,'msg'=>'Please add stages.',"id"=>''));
 			return false;
 		}
-		// if(count($woitems) == 0){
-		// 	echo json_encode(array('error'=>1,'msg'=>'Please add items.',"id"=>''));
-		// 	return false;
-		// }
+		if(count($woitems) == 0){
+			echo json_encode(array('error'=>1,'msg'=>'Please add items.',"id"=>''));
+			return false;
+		}
 
 		if(!$this->input->post('id')){
 			$id = $this->site_model->add_tbl('work_order_types',$items);
@@ -552,15 +588,15 @@ class Work_order extends CI_Controller {
 				);
 			}
 			$this->site_model->add_tbl_batch('work_order_type_stages',$stgrows);
-			// $this->site_model->delete_tbl('work_order_type_items',array('type_id'=>$id));
-			// $itrows = array();
-			// foreach ($woitems as $line => $item_id) {
-			// 	$itrows[] = array(
-			// 		'type_id'	=>	$id,
-			// 		'item_id'	=>	$item_id,
-			// 	);
-			// }
-			// $this->site_model->add_tbl_batch('work_order_type_items',$itrows);
+			$this->site_model->delete_tbl('work_order_type_items',array('type_id'=>$id));
+			$itrows = array();
+			foreach ($woitems as $line => $item_id) {
+				$itrows[] = array(
+					'type_id'	=>	$id,
+					'item_id'	=>	$item_id,
+				);
+			}
+			$this->site_model->add_tbl_batch('work_order_type_items',$itrows);
 		}
 		if(!$this->input->post('rForm')){
 			if($error == 0){

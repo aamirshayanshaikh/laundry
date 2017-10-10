@@ -601,15 +601,18 @@ class Lists extends CI_Controller {
         $cols = array('Date','Reference','Description','Qty In','Qty Out','UOM','Location','Trans Type','Remarks','');
         $table = 'inventory_moves';
         $select = 'inventory_moves.*,locations.name as loc_name,materials.name as mat_name,materials.uom as mat_uom,
+                   items.name as item_name,items.uom as item_uom,
                    trans_types.description as trans_type_name';
         $join['locations'] = "inventory_moves.loc_id = locations.id";
-        $join['materials'] = "inventory_moves.mat_id = materials.id";
+        $join['materials'] = array("content"=>"inventory_moves.mat_id = materials.id","mode"=>"left");
+        $join['items'] = array("content"=>"inventory_moves.item_id = items.id","mode"=>"left");
         $join['trans_types'] = "inventory_moves.trans_type = trans_types.type_id";
         $order['inventory_moves.trans_date'] = 'desc';
         $order['inventory_moves.id'] = 'desc';
         $count = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,null,true);
         $page = paginate($page_link,$count,$total_rows,$pagi);
         $items = $this->site_model->get_tbl($table,$args,$order,$join,true,$select,null,$page['limit']);
+        
         $json = array();
         if(count($items) > 0){
             $ids = array();
@@ -623,13 +626,20 @@ class Lists extends CI_Controller {
                 $memo = "";
                 if($res->memo)
                     $memo = $res->memo;
+                $name = $res->mat_name;
+                $uom = $res->mat_uom;
+                if($res->item_id != ""){
+                    $name = $res->item_name;
+                    $uom = $res->item_uom;
+                }
+
                 $json[] = array(
                     "date"=> sql2Date($res->trans_date),   
                     "reference"=>strtoupper($res->trans_ref),   
-                    "mat_name"=>ucFix($res->mat_name),   
+                    "name"=>ucFix($name),   
                     "qty_in"=>num($qty_in),   
                     "qty_out"=>num($qty_out),   
-                    "uom"=>strtoupper($res->mat_uom),   
+                    "uom"=>strtoupper($uom),   
                     "loc_name"=>ucFix($res->loc_name),   
                     "trans_type_name"=>ucFix($res->trans_type_name),   
                     "memo"=>$memo,                  

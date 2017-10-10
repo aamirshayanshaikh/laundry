@@ -39,7 +39,7 @@
          <div class="pull-right hidden-xs">
            <b>Version</b> 1.0
          </div>
-         <strong><a href="#">AdminRTJ</a>.</strong>
+         <strong><a href="#">Pointone</a>.</strong>
        </footer>
        <?php
            if(isset($js))

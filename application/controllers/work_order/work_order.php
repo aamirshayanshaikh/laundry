@@ -134,6 +134,7 @@ class Work_order extends CI_Controller {
 		$this->load->view('page',$data);
 	}
 	public function staging_db($id=null){
+		$this->load->model('inventory_model');
 		$user = sess('user');
 		$materials = sess('stage-mats');
 		$addons = sess('add-mats');
@@ -208,7 +209,6 @@ class Work_order extends CI_Controller {
 				}
 				$this->site_model->add_tbl_batch('work_orders_staging_materials',$rows);
 
-				$this->load->model('inventory_model');
 				foreach ($addons as $lid => $row) {
 					$this->inventory_model->move_qty($row['mat_id'],1,($row['add_on_qty'] * -1),WORK_ORDER_ISSUE_CODE,$this->input->post('ref'),date2Sql($this->input->post('stg_date')),'Additional - '.$this->input->post('stg_name'));
 				}
@@ -227,6 +227,9 @@ class Work_order extends CI_Controller {
 				}
 				if(count($produce) > 0){
 					$this->site_model->add_tbl_batch('work_orders_produced',$produce);
+					foreach ($produce as $row) {
+						$this->inventory_model->move_qty_item($row['item_id'],1,$row['qty'],WORK_ORDER_ISSUE_CODE,$this->input->post('ref'),date2Sql($this->input->post('stg_date')),'Produced Items - '.$this->input->post('stg_name'));
+					}
 				}
 			}
 		}
@@ -344,6 +347,105 @@ class Work_order extends CI_Controller {
 			}
 		}
 		echo json_encode(array('error'=>$error,'msg'=>$msg,'items'=>$items,'id'=>$id));
+	}
+	public function dispatch(){
+		$data = $this->syter->spawn('wo_dispatch');
+		$data['page_title'] = fa('fa-truck')." Dispatch";		
+		$items = array();
+		$new_ref = $this->site_model->get_next_ref(WORK_ORDER_DISPATCH);
+		$today = $this->site_model->get_db_now('php',true);
+
+		$args = array();
+		$join = array();
+		$select = "work_orders_produced.*,items.name as item_name,work_orders.reference";
+		$join['items'] = "work_orders_produced.item_id = items.id";
+		$join['work_orders'] = "work_orders_produced.wo_id = work_orders.id";
+		$args["work_orders_produced.qty > work_orders_produced.dispatched"] = array('use'=>'where','val'=>"",'third'=>false);
+		$items = $this->site_model->get_tbl('work_orders_produced',$args,array('work_orders.wo_date'=>'desc'),$join,true,$select);
+		$data['top_btns'][] = array('tag'=>'button','params'=>'id="save-btn" class="btn-flat btn-flat btn btn-success"','text'=>"<i class='fa fa-fw fa-save'></i> SAVE");
+		// $data['top_btns'][] = array('tag'=>'a','params'=>'class="btn btn-primary btn-flat" href="'.base_url().'uom"','text'=>"<i class='fa fa-fw fa-reply'></i>");
+		// sess_initialize('dispatch-items',$items);
+		$data['code'] = dispatch_form($new_ref,$today,$items);
+		$data['load_js'] = 'work_order/work_order';
+		$data['use_js'] = 'dispatch_form';
+		$this->load->view('page',$data);
+	}
+	public function dispatch_db(){
+		$this->load->model('inventory_model');
+		$reference = $this->input->post('reference');
+		$user = sess('user');
+		
+		if(!$this->input->post('id')){
+			$check = $this->site_model->ref_unused(WORK_ORDER_DISPATCH,$reference);
+			if(!$check){
+				echo json_encode(array('error'=>1,'msg'=>'Reference '.$reference.' is already in use.',"id"=>''));
+				return false;			
+			}
+		}
+
+		$dispatch_qty = $this->input->post('dispatch_qty'); 
+		$total_qty = 0;
+		$disp_qty = array();
+		foreach ($dispatch_qty as $prd_id => $qty) {
+			if($qty > 0){
+				$total_qty += $qty;
+				$disp_qty[$prd_id] = $qty;
+			}
+		}
+
+		if($total_qty == 0){
+			echo json_encode(array('error'=>1,'msg'=>'No inputed qty.',"id"=>''));
+			return false;			
+		}
+
+		$error = 0;
+		$msg = "";
+		$id = 0;
+	
+		$items = array(
+			"reference" 			=> $reference,
+			"dispatch_date" 		=> date2Sql($this->input->post('dispatch_date')),
+			"total_qty" 			=> $total_qty,
+			"customer_id" 			=> $this->input->post('customer_id'),
+			"memo"  				=> $this->input->post('memo'),
+		);
+
+		if(!$this->input->post('id')){
+			$id = $this->site_model->add_tbl('work_order_dispatch',$items,array('reg_date'=>'NOW()','reg_user'=>$user['id']));
+			$this->site_model->save_ref(WORK_ORDER_DISPATCH,$reference);	
+			$msg = "Added new Work Order Dispatch Items Reference #".$reference;	
+		}
+		else{
+			$id = $this->input->post('id');
+			$this->site_model->update_tbl('work_order_dispatch','id',$items,$id);
+			$msg = "Updated Work Order Dispatch Items Reference #".$reference;	
+		}
+		if($id){
+			$this->site_model->delete_tbl('work_order_dispatch_items',array('dispatch_id'=>$id));
+			$rows = array();
+			foreach ($disp_qty as $pid => $qty) {
+				$wo = $this->input->post('dispatch_wo_id');
+				$stg = $this->input->post('dispatch_stg_id');
+				$itm = $this->input->post('dispatch_item_id');
+				$rows[] = array(
+					'dispatch_id'	=>	$id,
+					'item_id'		=>	$itm[$pid],
+					'wo_id'			=>	$wo[$pid],
+					'wo_stg_id'		=>	$stg[$pid],
+					'qty'			=>	$qty,
+				);
+			}
+			$this->site_model->add_tbl_batch('work_order_dispatch_items',$rows);
+			foreach ($disp_qty as $pid => $qty) {
+				$itm = $this->input->post('dispatch_item_id');
+				$this->site_model->update_tbl('work_orders_produced',array('id'=>$pid),array(),null,array('dispatched'=>'dispatched+'.$qty));
+				$this->inventory_model->move_qty_item($itm[$pid],1,($qty * -1),WORK_ORDER_DISPATCH,$reference,date2Sql($this->input->post('dispatch_date')),'Dispatched Items');
+			}
+		}
+		if($error == 0){
+			site_alert($msg,'success');
+		}
+		echo json_encode(array('error'=>$error,'msg'=>$msg,"id"=>$id));
 	}
 	public function receive(){
 		$data = $this->syter->spawn('wo_rcv');

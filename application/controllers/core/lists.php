@@ -445,7 +445,11 @@ class Lists extends CI_Controller {
         if(count($items) > 0){
             $ids = array();
             foreach ($items as $res) {
-                $link = $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'purchase_orders/form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+                $link = "";
+                if($res->rcv_qty == 0)
+                    $link .= $this->html->A(fa('fa-edit fa-lg fa-fw'),base_url().'purchase_orders/form/'.$res->id,array('class'=>'btn btn-sm btn-primary btn-flat','return'=>'true'));
+                $window = "javascript:window.open('".base_url()."purchase_orders/pdf/".$res->id."','Purchase Order','width=800,height=600')";
+                $link .= "&nbsp;&nbsp;".$this->html->A(fa('fa-file-pdf-o fa-lg fa-fw'),$window,array('class'=>'btn btn-sm btn-success btn-flat','return'=>'true'));
                 $json[$res->id] = array(
                     "id"=>$res->id,   
                     "reference"=>strtoupper($res->reference),   

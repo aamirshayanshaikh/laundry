@@ -445,5 +445,9 @@ class Site_model extends CI_Model{
             $new_ref=$ref;		
 		$this->db->update('trans_types',array('next_ref'=>$new_ref),array('type_id'=>$trans_type));
 	}
+	public function get_company_info(){
+		$prefs = $this->site_model->get_settings(null,"company");
+		return $prefs;
+	}
 }
 ?>

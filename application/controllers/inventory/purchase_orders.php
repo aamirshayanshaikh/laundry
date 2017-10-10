@@ -108,4 +108,84 @@ class Purchase_orders extends CI_Controller {
 		}
 		echo json_encode(array('error'=>$error,'msg'=>$msg,"id"=>$id));
 	}
+	public function pdf($id=null){
+		$this->load->library('Pdf');
+
+		if($id == null){
+			redirect(base_url().'purchase_orders');
+			site_alert('PO not found.','error');
+		}
+
+		$comp_info = $this->site_model->get_company_info();
+		$po = array();
+		$po_items = array();
+		$join = array();
+		$join['suppliers'] = "purchase_orders.supplier_id = suppliers.id";
+		$join['locations'] = "purchase_orders.rcv_loc_id = locations.id";
+		$select = "purchase_orders.*,suppliers.name as supp_name,suppliers.address as supp_add,suppliers.contact_no as supp_contact_no,locations.name as loc_name,locations.address as loc_add";
+		$result = $this->site_model->get_tbl('purchase_orders',array('purchase_orders.id'=>$id),array(),$join,true,$select);
+		if($result){
+			$po = $result[0];
+			$join = array();
+			$select ="";
+			$data['page_subtitle'] = "Edit Purchase order ".ucwords(strtolower($po->reference));
+			$join['materials'] = "purchase_order_details.mat_id = materials.id";
+			$select = "purchase_order_details.*,materials.name as mat_name";
+			$result_details = $this->site_model->get_tbl('purchase_order_details',array('order_id'=>$id),array(),$join,true,$select);
+			foreach ($result_details as $res) {
+				$po_items[] = $res;	
+			}
+		}
+		else{
+			redirect(base_url().'purchase_orders');
+			site_alert('PO not found.','error');
+		}
+
+		$title = "Purchase Order";
+		$fileName = "PO#".$po->reference;
+
+		$pdf = new Pdf('P', 'mm', 'A4', true, 'UTF-8', false);
+		$pdf->SetTitle($title);
+		$pdf->setPrintHeader(false);
+		$pdf->setPrintFooter(false);
+		$pdf->SetMargins(5,5,5);
+		$pdf->SetAutoPageBreak(true);
+		$pdf->AddPage();
+
+		$pdf->SetFont('helvetica', 'B', 16);
+        $pdf->Cell(100, 6, $comp_info['comp_name'], 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, $title, 0, 0, 'R', 0);
+        $pdf->Ln(6);
+		$pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(100, 6, $comp_info['comp_address'], 0, 0, 'L', 0);
+		$pdf->SetFont('helvetica', '', 11);
+        $pdf->Cell(100, 6, $po->reference, 0, 0, 'R', 0);
+        $pdf->Ln(4);
+		$pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(100, 6, $comp_info['comp_contact_no'].' - '.$comp_info['comp_email'], 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, sql2Date($po->order_date), 0, 0, 'R', 0);
+        $pdf->Ln(4);
+		$pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(100, 6, $comp_info['comp_tin'], 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, '', 0, 0, 'R', 0);
+        
+        $pdf->Ln(10);
+		$pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(100, 6, 'Supplier:', 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, 'To:', 0, 0, 'L', 0);
+        $pdf->Ln(6);
+		$pdf->SetFont('helvetica', '', 10);
+		$supp_text = $po->supp_name."\n";
+		$supp_text .= $po->supp_add."\n";
+		$supp_text .= $po->supp_contact_no."\n";
+		$loc_text = $po->loc_name."\n";
+		$loc_text .= $po->loc_add."\n";
+        $pdf->MultiCell(100, 0, $supp_text, 0, 'L', 0, 0, '', '', true, 0, false, true, 0);
+        $pdf->MultiCell(100, 0, $loc_text, 0, 'L', 0, 0, '', '', true, 0, false, true, 0);
+
+        $pdf->Ln(10);
+
+
+		$pdf->Output($fileName,'I');
+	}
 }

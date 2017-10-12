@@ -533,6 +533,8 @@ class Lists extends CI_Controller {
             $ids = array();
             foreach ($items as $res) {
                 $link = $this->html->A(fa('fa-eye fa-lg fa-fw'),base_url().'receive_orders/rec_view/'.$res->id,array('title'=>'Receive Order #'.$res->reference,'class'=>'btn btn-sm btn-info btn-flat view-pop','return'=>'true'));
+                $window = "javascript:window.open('".base_url()."receive_orders/pdf/".$res->id."','Receiving','width=800,height=600')";
+                $link .= "&nbsp;&nbsp;".$this->html->A(fa('fa-file-pdf-o fa-lg fa-fw'),$window,array('class'=>'btn btn-sm btn-success btn-flat','return'=>'true'));
                 $json[$res->id] = array(
                     "id"=>$res->id,   
                     "reference"=>strtoupper($res->reference),   

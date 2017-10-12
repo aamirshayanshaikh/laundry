@@ -128,9 +128,8 @@ class Purchase_orders extends CI_Controller {
 			$po = $result[0];
 			$join = array();
 			$select ="";
-			$data['page_subtitle'] = "Edit Purchase order ".ucwords(strtolower($po->reference));
 			$join['materials'] = "purchase_order_details.mat_id = materials.id";
-			$select = "purchase_order_details.*,materials.name as mat_name";
+			$select = "purchase_order_details.*,materials.name as mat_name,materials.code as mat_code,materials.uom as mat_uom";
 			$result_details = $this->site_model->get_tbl('purchase_order_details',array('order_id'=>$id),array(),$join,true,$select);
 			foreach ($result_details as $res) {
 				$po_items[] = $res;	
@@ -170,22 +169,67 @@ class Purchase_orders extends CI_Controller {
         $pdf->Cell(100, 6, '', 0, 0, 'R', 0);
         
         $pdf->Ln(10);
-		$pdf->SetFont('helvetica', '', 8);
+		$pdf->SetFont('helvetica', 'B', 8);
         $pdf->Cell(100, 6, 'Supplier:', 0, 0, 'L', 0);
         $pdf->Cell(100, 6, 'To:', 0, 0, 'L', 0);
         $pdf->Ln(6);
-		$pdf->SetFont('helvetica', '', 10);
+		$pdf->SetFont('helvetica', '', 9);
 		$supp_text = $po->supp_name."\n";
 		$supp_text .= $po->supp_add."\n";
 		$supp_text .= $po->supp_contact_no."\n";
 		$loc_text = $po->loc_name."\n";
 		$loc_text .= $po->loc_add."\n";
+		$pdf->setCellPaddings(5,0,0,0);
         $pdf->MultiCell(100, 0, $supp_text, 0, 'L', 0, 0, '', '', true, 0, false, true, 0);
         $pdf->MultiCell(100, 0, $loc_text, 0, 'L', 0, 0, '', '', true, 0, false, true, 0);
+        $pdf->Ln(20);
 
+        
+        $header  = array('Code', 'Material', 'Order Qty', 'UOM', 'Cost', 'Total Cost');
+        $w = array(30, 60, 25, 25, 25, 34);
+        $num_headers = count($header);
+        $pdf->SetTextColor(0);
+		$pdf->SetFont('helvetica', 'B', 9);
+		$pdf->setCellPaddings(3,0,3,0);
+        for($i = 0; $i < $num_headers; ++$i) {
+            $pdf->Cell($w[$i], 7, $header[$i], 1, 0, 'C', 0);
+        }
+        $pdf->Ln();
+        $total_qty = 0;
+        $total_cost = 0;
+		$pdf->SetFont('helvetica', '', 9);
+		$pdf->SetFillColor(238, 238, 238);
+        $fill = 0;
+        foreach($po_items as $res) {
+            $pdf->Cell($w[0], 6, $res->mat_code, 'LR', 0, 'L', $fill);
+            $pdf->Cell($w[1], 6, $res->mat_name, 'LR', 0, 'L', $fill);
+            $pdf->Cell($w[2], 6, num($res->order_qty), 'LR', 0, 'R', $fill);
+            $pdf->Cell($w[3], 6, strtoupper($res->mat_uom), 'LR', 0, 'C', $fill);
+            $pdf->Cell($w[4], 6, num($res->cost), 'LR', 0, 'R', $fill);
+            $pdf->Cell($w[5], 6, num($res->total_cost), 'LR', 0, 'R', $fill);
+            $pdf->Ln();
+        	$total_qty += $res->order_qty;
+        	$total_cost += $res->total_cost;
+        	$fill=!$fill;
+        }
+        $fill = 0;
+        $pdf->Cell(140, 6, ' ', 'T', 0, 'R', $fill);
+		$pdf->SetFont('helvetica', 'B', 10);
+        $pdf->Cell(25, 6, 'Total Cost', 1, 0, 'R', $fill);
+        $pdf->Cell($w[5], 6, num($total_cost), 1, 0, 'R', $fill);
+        $pdf->Ln();
+        $pdf->Cell(140, 6, ' ', 0, 0, 'R', $fill);
+		$pdf->SetFont('helvetica', 'B', 10);
+        $pdf->Cell(25, 6, 'Total Qty', 'LRB', 0, 'R', $fill);
+        $pdf->Cell($w[5], 6, num($total_qty), 'LRB', 0, 'R', $fill);
         $pdf->Ln(10);
-
-
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->setCellPaddings(0,0,0,0);
+        $pdf->Cell(200, 6, 'Remarks', 0, 0, 'L', 0);
+        $pdf->Ln();
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->setCellPaddings(3,0,0,0);
+        $pdf->Cell(200, 20, $po->memo, 0, 0, 'L', 1, '', 0, false, 'T');
 		$pdf->Output($fileName,'I');
 	}
 }

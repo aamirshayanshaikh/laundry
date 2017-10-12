@@ -132,4 +132,123 @@ class Receive_orders extends CI_Controller {
 		}
 		echo json_encode(array('error'=>$error,'msg'=>$msg,"id"=>$id));
 	}
+	public function pdf($id=null){
+		$this->load->library('Pdf');
+
+		if($id == null){
+			redirect(base_url().'receive_orders');
+			site_alert('Receiving not found.','error');
+		}
+
+		$comp_info = $this->site_model->get_company_info();
+		$ro = array();
+		$ro_items = array();
+		$join = array();
+		$join['purchase_orders'] = "receive_orders.order_id = purchase_orders.id";
+		$join['suppliers'] = "purchase_orders.supplier_id = suppliers.id";
+		$join['locations'] = "receive_orders.loc_id = locations.id";
+		$select = "receive_orders.*,suppliers.name as supp_name,suppliers.address as supp_add,suppliers.contact_no as supp_contact_no,locations.name as loc_name,locations.address as loc_add";
+		$result = $this->site_model->get_tbl('receive_orders',array('receive_orders.id'=>$id),array(),$join,true,$select);
+		if($result){
+			$ro = $result[0];
+			$join = array();
+			$select ="";
+			$join['materials'] = "receive_order_details.mat_id = materials.id";
+			$select = "receive_order_details.*,materials.name as mat_name,materials.code as mat_code,materials.uom as mat_uom";
+			$result_details = $this->site_model->get_tbl('receive_order_details',array('rcv_id'=>$id),array(),$join,true,$select);
+			foreach ($result_details as $res) {
+				$ro_items[] = $res;	
+			}
+		}
+		else{
+			redirect(base_url().'receive_orders');
+			site_alert('Receiving not found.','error');
+		}
+
+		$title = "Receiving";
+		$fileName = "RO#".$ro->reference;
+
+		$pdf = new Pdf('P', 'mm', 'A4', true, 'UTF-8', false);
+		$pdf->SetTitle($title);
+		$pdf->setPrintHeader(false);
+		$pdf->setPrintFooter(false);
+		$pdf->SetMargins(5,5,5);
+		$pdf->SetAutoPageBreak(true);
+		$pdf->AddPage();
+
+		$pdf->SetFont('helvetica', 'B', 16);
+        $pdf->Cell(100, 6, $comp_info['comp_name'], 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, $title, 0, 0, 'R', 0);
+        $pdf->Ln(6);
+		$pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(100, 6, $comp_info['comp_address'], 0, 0, 'L', 0);
+		$pdf->SetFont('helvetica', '', 11);
+        $pdf->Cell(100, 6, $ro->reference, 0, 0, 'R', 0);
+        $pdf->Ln(4);
+		$pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(100, 6, $comp_info['comp_contact_no'].' - '.$comp_info['comp_email'], 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, sql2Date($ro->receive_date), 0, 0, 'R', 0);
+        $pdf->Ln(4);
+		$pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(100, 6, $comp_info['comp_tin'], 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, '', 0, 0, 'R', 0);
+        
+        $pdf->Ln(10);
+		$pdf->SetFont('helvetica', 'B', 8);
+        $pdf->Cell(100, 6, 'Supplier:', 0, 0, 'L', 0);
+        $pdf->Cell(100, 6, 'To:', 0, 0, 'L', 0);
+        $pdf->Ln(6);
+		$pdf->SetFont('helvetica', '', 9);
+		$supp_text = $ro->supp_name."\n";
+		$supp_text .= $ro->supp_add."\n";
+		$supp_text .= $ro->supp_contact_no."\n";
+		$loc_text = $ro->loc_name."\n";
+		$loc_text .= $ro->loc_add."\n";
+		$pdf->setCellPaddings(5,0,0,0);
+        $pdf->MultiCell(100, 0, $supp_text, 0, 'L', 0, 0, '', '', true, 0, false, true, 0);
+        $pdf->MultiCell(100, 0, $loc_text, 0, 'L', 0, 0, '', '', true, 0, false, true, 0);
+        $pdf->Ln(20);
+
+        
+        $header  = array('Code', 'Material', 'Order Qty', 'UOM', 'Received Qty');
+        $w = array(30, 75, 35, 25, 35);
+        $num_headers = count($header);
+        $pdf->SetTextColor(0);
+		$pdf->SetFont('helvetica', 'B', 9);
+		$pdf->setCellPaddings(3,0,3,0);
+        for($i = 0; $i < $num_headers; ++$i) {
+            $pdf->Cell($w[$i], 7, $header[$i], 1, 0, 'C', 0);
+        }
+        $pdf->Ln();
+        $total_qty = 0;
+        $total_cost = 0;
+		$pdf->SetFont('helvetica', '', 9);
+		$pdf->SetFillColor(238, 238, 238);
+        $fill = 0;
+        foreach($ro_items as $res) {
+            $pdf->Cell($w[0], 6, $res->mat_code, 'LR', 0, 'L', $fill);
+            $pdf->Cell($w[1], 6, $res->mat_name, 'LR', 0, 'L', $fill);
+            $pdf->Cell($w[2], 6, num($res->order_qty), 'LR', 0, 'R', $fill);
+            $pdf->Cell($w[3], 6, strtoupper($res->mat_uom), 'LR', 0, 'C', $fill);
+            $pdf->Cell($w[4], 6, num($res->rcv_qty), 'LR', 0, 'R', $fill);
+            $pdf->Ln();
+        	$total_qty += $res->rcv_qty;
+        	$fill=!$fill;
+        }
+        $fill = 0;
+        $pdf->Cell(105, 6, ' ', 'T', 0, 'R', $fill);
+		$pdf->SetFont('helvetica', 'B', 10);
+        $pdf->Cell(60, 6, 'Total Qty Received', 1, 0, 'R', $fill);
+        $pdf->Cell($w[4], 6, num($total_qty), 1, 0, 'R', $fill);
+ 
+        $pdf->Ln(10);
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->setCellPaddings(0,0,0,0);
+        $pdf->Cell(200, 6, 'Remarks', 0, 0, 'L', 0);
+        $pdf->Ln();
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->setCellPaddings(3,0,0,0);
+        $pdf->Cell(200, 20, $ro->memo, 0, 0, 'L', 1, '', 0, false, 'T');
+		$pdf->Output($fileName,'I');
+	}
 }
